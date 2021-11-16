@@ -12,6 +12,7 @@ const TGAColor green = TGAColor(0, 255, 0, 255);
 Model* model = NULL;
 const int width = 800;
 const int height = 800;
+Vec3f light_dir(0, 0, -1);
 
 void line(Vec2i p0, Vec2i p1, TGAImage& image, TGAColor color)
 {
@@ -48,12 +49,12 @@ Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P)
 	Vec3f s[2];
 	for (int i = 2; i--;)
 	{
-		s[i][0] = C[i] - A[i];
-		s[i][1] = B[i] - A[i];
-		s[i][2] = A[i] - P[i];
+		s[i][0] = C[i] - A[i]; // CA
+		s[i][1] = B[i] - A[i]; // BA
+		s[i][2] = A[i] - P[i]; // PA
 	}
 	Vec3f u = cross(s[0], s[1]);
-	if (std::abs(u[2]) > 1e-2)
+	if (std::abs(u[2]) > 0.01f)
 		return Vec3f(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
 	return Vec3f(-1, 1, 1); // 负坐标将会被忽略
 }
@@ -64,6 +65,7 @@ void triangle(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color)
 	Vec2f bboxmin(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 	Vec2f clamp(image.get_width() - 1, image.get_height() - 1);
 
+	// 获取包围三角形的AABB
 	for (int i = 0; i < 3; ++i)
 	{
 		for (int j = 0; j < 2; ++j)
@@ -72,6 +74,7 @@ void triangle(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color)
 			bboxmin[j] = std::max(0.0f, std::min(bboxmin[j], pts[i][j]));
 		}
 	}
+
 	Vec3f P;
 	for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++)
 	{
@@ -115,6 +118,9 @@ int main(int argc, char** argv)
 		Vec3f pts[3];
 		for (int j = 0; j < 3; ++j)
 			pts[j] = world2screen(model->vert(face[j]));
+
+		Vec3f n = cross((pts[2] - pts[0]), (pts[1] - pts[0]));
+		n.normalize();
 
 		triangle(pts, zbuffer, image, TGAColor(rand() % 255, rand() % 255, rand() % 255, 255));
 	}
