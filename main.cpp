@@ -51,7 +51,7 @@ Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P)
 	{
 		s[i][0] = C[i] - A[i]; // CA
 		s[i][1] = B[i] - A[i]; // BA
-		s[i][2] = A[i] - P[i]; // PA
+		s[i][2] = A[i] - P[i]; // AP
 	}
 	Vec3f u = cross(s[0], s[1]);
 	if (std::abs(u[2]) > 0.01f)
@@ -81,12 +81,14 @@ void triangle(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color)
 		for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++)
 		{
 			Vec3f bc_screen = barycentric(pts[0], pts[1], pts[2], P);
-			if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0) continue;
+			if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)
+				continue; // 只要有一个cross结果小于零，就在三角形外面
 
 			P.z = 0;
 			for (int i = 0; i < 3; ++i)
 				P.z += pts[i][2] * bc_screen[i];
 
+			// 深度缓冲比较
 			if (zbuffer[int(P.x + P.y * width)] < P.z)
 			{
 				zbuffer[int(P.x + P.y * width)] = P.z;
