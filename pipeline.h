@@ -20,7 +20,7 @@ public:
 private:
 	int width = 800;
 	int height = 800;
-	Vector3f eye_pos = { 0.f,0.f,10.f };
+	Vector3f eye_pos = { 0.f,0.f,10.0f };
 	Vector3f light_dir = { 0.f,1.f,1.f };
 
 	Matrix4f ModelView;
@@ -28,7 +28,7 @@ private:
 	Matrix4f Projection;
 
 public:
-	Pipeline(Entity e, Shader s) : entity(e), shader(s) {};
+	Pipeline(Entity& e, Shader s) : entity(e), shader(s) {};
 	TGAImage render();
 
 private:
