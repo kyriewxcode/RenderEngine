@@ -31,7 +31,7 @@ Model::Model(const std::string filename) : verts_(), uv_(), norms_(), facet_vrt_
 		else if (!line.compare(0, 3, "vt "))
 		{
 			iss >> trash >> trash;
-			Vector3f uv;
+			Vector2f uv;
 			for (int i = 0; i < 2; i++) iss >> uv[i];
 			uv_.push_back(uv);
 		}
