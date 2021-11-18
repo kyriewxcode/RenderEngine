@@ -8,8 +8,8 @@
 class Shader
 {
 public:
-	Vector4f vertexShader(const int iface,const int nvert);
-	TGAColor fragmentShader(Vector4f vert);
+	glm::vec4 vertexShader(const int iface,const int nvert);
+	TGAColor fragmentShader(glm::vec4 vert);
 };
 
 #endif // !__SHADER_H__

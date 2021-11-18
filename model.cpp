@@ -17,21 +17,21 @@ Model::Model(const std::string filename) : verts_(), uv_(), norms_(), facet_vrt_
 		if (!line.compare(0, 2, "v "))
 		{
 			iss >> trash;
-			Vector3f v;
+			glm::vec3 v;
 			for (int i = 0; i < 3; i++) iss >> v[i];
 			verts_.push_back(v);
 		}
 		else if (!line.compare(0, 3, "vn "))
 		{
 			iss >> trash >> trash;
-			Vector3f n;
+			glm::vec3 n;
 			for (int i = 0; i < 3; i++) iss >> n[i];
-			norms_.push_back(n.normalized());
+			norms_.push_back(glm::normalize(n));
 		}
 		else if (!line.compare(0, 3, "vt "))
 		{
 			iss >> trash >> trash;
-			Vector2f uv;
+			glm::vec2 uv;
 			for (int i = 0; i < 2; i++) iss >> uv[i];
 			uv_.push_back(uv);
 		}
@@ -72,12 +72,12 @@ int Model::nfaces() const
 	return facet_vrt_.size() / 3;
 }
 
-Vector3f Model::vert(const int i) const
+glm::vec3 Model::vert(const int i) const
 {
 	return verts_[i];
 }
 
-Vector3f Model::vert(const int iface, const int nthvert) const
+glm::vec3 Model::vert(const int iface, const int nthvert) const
 {
 	return verts_[facet_vrt_[iface * 3 + nthvert]];
 }
@@ -91,31 +91,31 @@ void Model::load_texture(std::string filename, const std::string suffix, TGAImag
 	img.flip_vertically();
 }
 
-TGAColor Model::diffuse(const Vector2f& uvf) const
+TGAColor Model::diffuse(const glm::vec2& uvf) const
 {
 	return diffusemap_.get(uvf[0] * diffusemap_.get_width(), uvf[1] * diffusemap_.get_height());
 }
 
-Vector3f Model::normal(const Vector2f& uvf) const
+glm::vec3 Model::normal(const glm::vec2& uvf) const
 {
 	TGAColor c = normalmap_.get(uvf[0] * normalmap_.get_width(), uvf[1] * normalmap_.get_height());
-	Vector3f res;
+	glm::vec3 res;
 	for (int i = 0; i < 3; i++)
 		res[2 - i] = c[i] / 255. * 2 - 1;
 	return res;
 }
 
-double Model::specular(const Vector2f& uvf) const
+double Model::specular(const glm::vec2& uvf) const
 {
 	return specularmap_.get(uvf[0] * specularmap_.get_width(), uvf[1] * specularmap_.get_height())[0];
 }
 
-Vector2f Model::uv(const int iface, const int nthvert) const
+glm::vec2 Model::uv(const int iface, const int nthvert) const
 {
 	return uv_[facet_tex_[iface * 3 + nthvert]];
 }
 
-Vector3f Model::normal(const int iface, const int nthvert) const
+glm::vec3 Model::normal(const int iface, const int nthvert) const
 {
 	return norms_[facet_nrm_[iface * 3 + nthvert]];
 }

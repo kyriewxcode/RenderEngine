@@ -1,11 +1,11 @@
 #include "Shader.h"
 
-Vector4f Shader::vertexShader(const int iface, const int nvert)
+glm::vec4 Shader::vertexShader(const int iface, const int nvert)
 {
-	return Vector4f();
+	return glm::vec4();
 }
 
-TGAColor Shader::fragmentShader(Vector4f vert)
+TGAColor Shader::fragmentShader(glm::vec4 vert)
 {
 	return TGAColor();
 }

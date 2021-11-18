@@ -5,11 +5,11 @@
 
 struct Transform
 {
-	Vector3f position;
-	Vector3f rotation;
-	Vector3f scale;
+	glm::vec3 position;
+	glm::vec3 rotation;
+	glm::vec3 scale;
 	Transform() {};
-	Transform(Vector3f pos, Vector3f rotat, Vector3f scal) :position(pos), rotation(rotat), scale(scal) {};
+	Transform(glm::vec3 pos, glm::vec3 rotat, glm::vec3 scal) :position(pos), rotation(rotat), scale(scal) {};
 };
 
 struct Entity

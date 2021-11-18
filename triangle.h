@@ -7,27 +7,27 @@ class Triangle
 {
 
 public:
-	Vector4f vert[3]; /*the original coordinates of the triangle, v0, v1, v2 in counter clockwise order*/
+	glm::vec4 vert[3]; /*the original coordinates of the triangle, v0, v1, v2 in counter clockwise order*/
 	/*Per vertex values*/
-	Vector3f color[3]; //color at each vertex;
-	Vector2f tex_coords[3]; //texture u,v
-	Vector3f normal[3]; //normal vector for each vertex
+	glm::vec3 color[3]; //color at each vertex;
+	glm::vec2 tex_coords[3]; //texture u,v
+	glm::vec3 normal[3]; //normal vector for each vertex
 
 	TGAImage* tex = nullptr;
 	Triangle();
 
-	Eigen::Vector4f a() const { return vert[0]; }
-	Eigen::Vector4f b() const { return vert[1]; }
-	Eigen::Vector4f c() const { return vert[2]; }
+	glm::vec4 a() const { return vert[0]; }
+	glm::vec4 b() const { return vert[1]; }
+	glm::vec4 c() const { return vert[2]; }
 
-	void setVertex(int ind, Vector4f ver); /*set i-th vertex coordinates */
-	void setNormal(int ind, Vector3f n); /*set i-th vertex normal vector*/
+	void setVertex(int ind, glm::vec4 ver); /*set i-th vertex coordinates */
+	void setNormal(int ind, glm::vec3 n); /*set i-th vertex normal vector*/
 	void setColor(int ind, float r, float g, float b); /*set i-th vertex color*/
 
-	void setNormals(const std::array<Vector3f, 3>& normals);
-	void setColors(const std::array<Vector3f, 3>& colors);
-	void setTexCoord(int ind, Vector2f uv); /*set i-th vertex texture coordinate*/
-	std::array<Vector4f, 3> toVector4() const;
+	void setNormals(const std::array<glm::vec3, 3>& normals);
+	void setColors(const std::array<glm::vec3, 3>& colors);
+	void setTexCoord(int ind, glm::vec2 uv); /*set i-th vertex texture coordinate*/
+	std::array<glm::vec4, 3> toVector4() const;
 };
 
 

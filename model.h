@@ -7,10 +7,11 @@
 
 class Model
 {
+	
 private:
-	std::vector<Vector3f> verts_;     // array of vertices
-	std::vector<Vector2f> uv_;        // array of tex coords
-	std::vector<Vector3f> norms_;     // array of normal vectors
+	std::vector<glm::vec3> verts_;     // array of vertices
+	std::vector<glm::vec2> uv_;        // array of tex coords
+	std::vector<glm::vec3> norms_;     // array of normal vectors
 	std::vector<int> facet_vrt_;
 	std::vector<int> facet_tex_;  // indices in the above arrays per triangle
 	std::vector<int> facet_nrm_;
@@ -22,13 +23,13 @@ public:
 	Model(const std::string filename);
 	int nverts() const;
 	int nfaces() const;
-	Vector3f normal(const int iface, const int nthvert) const;  // per triangle corner normal vertex
-	Vector3f normal(const Vector2f& uv) const;                      // fetch the normal vector from the normal map texture
-	Vector3f vert(const int i) const;
-	Vector3f vert(const int iface, const int nthvert) const;
-	Vector2f uv(const int iface, const int nthvert) const;
-	TGAColor diffuse(const Vector2f& uv) const;
-	double specular(const Vector2f& uv) const;
+	glm::vec3 normal(const int iface, const int nthvert) const;  // per triangle corner normal vertex
+	glm::vec3 normal(const glm::vec2& uv) const;                      // fetch the normal vector from the normal map texture
+	glm::vec3 vert(const int i) const;
+	glm::vec3 vert(const int iface, const int nthvert) const;
+	glm::vec2 uv(const int iface, const int nthvert) const;
+	TGAColor diffuse(const glm::vec2& uv) const;
+	double specular(const glm::vec2& uv) const;
 };
 #endif //__MODEL_H__
 
