@@ -17,8 +17,7 @@ public:
 	unsigned char* pixels;
 
 private:
-	int width = 800;
-	int height = 600;
+
 	glm::vec3 eye_pos = { 0.f,0.f,10.0f };
 	glm::vec3 light_dir = { 0.f,1.f,1.f };
 
@@ -27,7 +26,11 @@ private:
 	glm::mat4x4 Projection;
 
 public:
-	Pipeline(Entity& e, Shader s) : entity(e), shader(s) {};
+	Pipeline(Entity& e, Shader s) : entity(e), shader(s)
+	{
+		zbuffer = std::vector<float>(width * height, std::numeric_limits<double>::max());
+		pixels = new unsigned char[width * height * 4];
+	};
 	void render();
 
 private:

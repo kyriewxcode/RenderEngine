@@ -1,5 +1,6 @@
 #include "pipeline.h"
 #include <GLFW\glfw3.h>
+#include <algorithm>
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const glm::vec4* v)
 {
@@ -141,8 +142,6 @@ glm::mat4 Pipeline::get_projection_matrix(float eye_fov, float aspect_ratio, flo
 
 void Pipeline::render()
 {
-	zbuffer = std::vector<float>(width * height, std::numeric_limits<double>::max());
-	pixels = new unsigned char[width * height * 4];
 	// set triangle
 	for (int i = 0; i < entity.model->nfaces(); i++)
 	{
@@ -157,39 +156,35 @@ void Pipeline::render()
 		TriangleList.push_back(t);
 	}
 
+	// get mvp matrix
 	ModelView = get_model_matrix(0.0f);
 	Viewport = get_view_matrix(eye_pos);
 	Projection = get_projection_matrix(45.0f, 1.f, 0.1f, 50.f);
-
-	float f1 = (50.f - 0.1f) / 2.0f;
-	float f2 = (50.f + 0.1f) / 2.0f;
 	glm::mat4 mvp = Projection * Viewport * ModelView;
 
+	// rasterization
 	for (const auto& t : TriangleList)
 	{
-		Triangle newtri = *t;
+		Triangle newtri;
 
-		std::array<glm::vec4, 3> mm{
+		std::array<glm::vec3, 3> viewspace_pos
+		{
 			(Viewport * ModelView * t->vert[0]),
 			(Viewport * ModelView * t->vert[1]),
 			(Viewport * ModelView * t->vert[2])
 		};
 
-		std::array<glm::vec3, 3> viewspace_pos;
-
-		std::transform(mm.begin(), mm.end(), viewspace_pos.begin(), [](auto& v) { return glm::vec3(v); });
-
-		glm::vec4 v[] = {
+		glm::vec4 vertex[] = {
 				mvp * t->vert[0],
 				mvp * t->vert[1],
 				mvp * t->vert[2]
 		};
 
-		for (auto& vec : v)
+		for (auto& v : vertex)
 		{
-			vec.x /= vec.w;
-			vec.y /= vec.w;
-			vec.z /= vec.w;
+			v.x /= v.w;
+			v.y /= v.w;
+			v.z /= v.w;
 		}
 
 		glm::mat4 inv_trans = glm::transpose(glm::inverse(Viewport * ModelView));
@@ -200,22 +195,19 @@ void Pipeline::render()
 		};
 
 		// viewport transformation
-		for (auto& vert : v)
+		float f1 = (50.f - 0.1f) / 2.0f;
+		float f2 = (50.f + 0.1f) / 2.0f;
+		for (auto& v : vertex)
 		{
-			vert.x = 0.5f * (float)width * (vert.x + 1.0f);
-			vert.y = 0.5f * (float)height * (vert.y + 1.0f);
-			vert.z = vert.z * f1 + f2;
-
-			if (vert.y < 0)
-			{
-				std::cout << "" << std::endl;
-			}
+			v.x = 0.5f * (float)width * (v.x + 1.0f);
+			v.y = 0.5f * (float)height * (v.y + 1.0f);
+			v.z = v.z * f1 + f2;
 		}
 
 		for (int i = 0; i < 3; ++i)
 		{
 			// screen space position
-			newtri.setVertex(i, v[i]);
+			newtri.setVertex(i, vertex[i]);
 		}
 
 		for (int i = 0; i < 3; ++i)
@@ -224,12 +216,13 @@ void Pipeline::render()
 			newtri.setNormal(i, glm::vec3(n[i]));
 		}
 
-		newtri.setColor(0, 148, 121.0, 92.0);
-		newtri.setColor(1, 148, 121.0, 92.0);
-		newtri.setColor(2, 148, 121.0, 92.0);
+		//newtri.setColor(0, 148, 121.0, 92.0);
+		//newtri.setColor(1, 148, 121.0, 92.0);
+		//newtri.setColor(2, 148, 121.0, 92.0);
 
 		triangle(newtri, viewspace_pos);
 	}
+	TriangleList.clear();
 }
 
 void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_pos)
@@ -281,6 +274,5 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 			}
 		}
 	}
-
 }
 

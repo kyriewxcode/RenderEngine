@@ -34,6 +34,7 @@
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="tgaimage.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="triangle.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
