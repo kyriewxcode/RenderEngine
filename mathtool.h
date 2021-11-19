@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __MATH_TOOL_H__
 #define __MATH_TOOL_H__
 
@@ -5,7 +6,9 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <array>
+#include <vector>
 
+#include "tgaimage.h"
 #include "Timer.h"
 
 constexpr auto MY_PI = 3.1415926;
@@ -14,6 +17,8 @@ constexpr double DEG_TO_RAD = MY_PI / 180.0;
 
 const int width = 800;
 const int height = 600;
+
+#include "tiny_obj_loader.h"
 
 #endif // !__MATH_TOOL_H__
 

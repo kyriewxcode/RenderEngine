@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
@@ -11,7 +12,9 @@
 
 #include <iostream>
 
-#include "model.h"
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "mathtool.h"
+
 #include "Entity.h"
 #include "Shader.h"
 #include "pipeline.h"

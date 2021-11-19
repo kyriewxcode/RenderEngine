@@ -75,9 +75,9 @@ glm::mat4 Pipeline::get_model_matrix(float angle)
 
 	glm::mat4 scale;
 	scale = {
-		2.5, 0, 0, 0,
-		0, 2.5, 0, 0,
-		0, 0, 2.5, 0,
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
 		0, 0, 0, 1
 	};
 
@@ -140,24 +140,28 @@ glm::mat4 Pipeline::get_projection_matrix(float eye_fov, float aspect_ratio, flo
 	return projection;
 }
 
+void Pipeline::clear_color(glm::vec4 color)
+{
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			auto index = y * width + x;
+			pixels[index * 4 + 0] = color.r;
+			pixels[index * 4 + 1] = color.g;
+			pixels[index * 4 + 2] = color.b;
+			pixels[index * 4 + 3] = color.a;
+		}
+	}
+}
+
 void Pipeline::render()
 {
 	// set triangle
-	for (int i = 0; i < entity.model->nfaces(); i++)
-	{
-		Triangle* t = new Triangle();
-		for (int j = 0; j < 3; j++)
-		{
-			glm::vec3 v = entity.model->vert(i, j);
-			t->setVertex(j, glm::vec4(v.x, v.y, v.z, 1.0f));
-			t->setNormal(j, entity.model->normal(i, j));
-			t->setTexCoord(j, entity.model->uv(i, j));
-		}
-		TriangleList.push_back(t);
-	}
+	set_triangle_list(entity);
 
 	// get mvp matrix
-	ModelView = get_model_matrix(0.0f);
+	ModelView = get_model_matrix(45.f);
 	Viewport = get_view_matrix(eye_pos);
 	Projection = get_projection_matrix(45.0f, 1.f, 0.1f, 50.f);
 	glm::mat4 mvp = Projection * Viewport * ModelView;
@@ -184,6 +188,10 @@ void Pipeline::render()
 		{
 			v.x /= v.w;
 			v.y /= v.w;
+			if (v.x > 1.f || v.x < -1.f || v.y>1.f || v.y < -1.f)
+			{
+				std::cout << "out screen" << std::endl;
+			}
 			v.z /= v.w;
 		}
 
@@ -208,21 +216,64 @@ void Pipeline::render()
 		{
 			// screen space position
 			newtri.setVertex(i, vertex[i]);
-		}
-
-		for (int i = 0; i < 3; ++i)
-		{
-			// screen space normal
 			newtri.setNormal(i, glm::vec3(n[i]));
+			//newtri.setColor(i, t->color->r, t->color->g, t->color->b);
 		}
-
-		//newtri.setColor(0, 148, 121.0, 92.0);
-		//newtri.setColor(1, 148, 121.0, 92.0);
-		//newtri.setColor(2, 148, 121.0, 92.0);
 
 		triangle(newtri, viewspace_pos);
 	}
 	TriangleList.clear();
+}
+
+void Pipeline::set_triangle_list(Entity entity)
+{
+	// loop over shapes
+	for (size_t s = 0; s < entity.shapes.size(); s++)
+	{
+		size_t index_offset = 0;
+		// loop over faces(polygon)
+		for (size_t f = 0; f < entity.shapes[s].mesh.num_face_vertices.size(); f++)
+		{
+			Triangle* t = new Triangle();
+			size_t fv = size_t(entity.shapes[s].mesh.num_face_vertices[f]);
+			//loop over vertices in the face
+			for (size_t v = 0; v < fv; v++)
+			{
+				// vertex data
+				tinyobj::index_t idx = entity.shapes[s].mesh.indices[index_offset + v];
+				tinyobj::real_t vx = entity.attrib.vertices[3 * size_t(idx.vertex_index) + 0];
+				tinyobj::real_t vy = entity.attrib.vertices[3 * size_t(idx.vertex_index) + 1];
+				tinyobj::real_t vz = entity.attrib.vertices[3 * size_t(idx.vertex_index) + 2];
+				t->setVertex(v, glm::vec4(vx, vy, vz, 1));
+
+				// normal data
+				if (idx.normal_index >= 0)
+				{
+					tinyobj::real_t nx = entity.attrib.normals[3 * size_t(idx.normal_index) + 0];
+					tinyobj::real_t ny = entity.attrib.normals[3 * size_t(idx.normal_index) + 1];
+					tinyobj::real_t nz = entity.attrib.normals[3 * size_t(idx.normal_index) + 2];
+					t->setNormal(v, glm::vec3(nx, ny, nz));
+				}
+
+				// texcoord data
+				if (idx.texcoord_index >= 0)
+				{
+					tinyobj::real_t tx = entity.attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
+					tinyobj::real_t ty = entity.attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
+					t->setTexCoord(v, glm::vec2(tx, ty));
+				}
+
+				// vertex colors
+				tinyobj::real_t red = entity.attrib.colors[3 * size_t(idx.vertex_index) + 0];
+				tinyobj::real_t green = entity.attrib.colors[3 * size_t(idx.vertex_index) + 1];
+				tinyobj::real_t blue = entity.attrib.colors[3 * size_t(idx.vertex_index) + 2];
+				t->setColor(v, red, green, blue);
+			}
+			TriangleList.push_back(t);
+			index_offset += fv;
+			entity.shapes[s].mesh.material_ids[f];
+		}
+	}
 }
 
 void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_pos)
@@ -241,10 +292,14 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 		{
 			if (insideTriangle(x, y, t.vert))
 			{
+				// (x,y) = alpha A + beta B + gamma C
 				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, t.vert);
-				float Z = 1.0f / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w);
-				float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w;
+				float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w; // compute point.z with w
+				float Z = 1.0f / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w); // compute point.w
 				zp *= Z;
+
+				if (get_index(x, y) > width * height)
+					continue;
 
 				if (zp < zbuffer[get_index(x, y)])
 				{
@@ -275,4 +330,3 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 		}
 	}
 }
-

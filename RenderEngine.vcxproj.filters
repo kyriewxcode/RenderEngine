@@ -17,9 +17,6 @@
     <ClCompile Include="tgaimage.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="model.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="pipeline.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -32,9 +29,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tgaimage.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="model.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="pipeline.h">
@@ -56,6 +50,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Timer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="tiny_obj_loader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

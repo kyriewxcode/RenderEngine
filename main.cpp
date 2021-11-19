@@ -3,33 +3,32 @@
 int main(int argc, char** argv)
 {
 	glfwInit();
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	GLFWwindow* window = glfwCreateWindow(width, height, "RenderEngine", NULL, NULL);
+	
+	const char* inputfile = "obj/diablo3_pose/diablo3_pose.obj";
+	const char* cube = "obj/cube.obj";
+	Entity entity(inputfile);
 
-	Model* model = NULL;
-	if (argc == 2)
-		model = new Model(argv[1]);
-	else
-		model = new Model("obj/diablo3_pose/diablo3_pose.obj");
-	glm::vec3 vec3fzero = glm::vec3(0.0f, 0.0f, 0.0f);
-	Transform trans(vec3fzero, vec3fzero, vec3fzero);
-	Entity entity(trans, model);
 	Shader shader;
 	Pipeline pipeline(entity, shader);
-
-	glfwMakeContextCurrent(window);
-
-	double lastTime = glfwGetTime();
-	int frameCount = 0;
-
 	pipeline.zbuffer = std::vector<float>(width * height, std::numeric_limits<double>::max());
 	pipeline.pixels = new unsigned char[width * height * 4];
 
+	glfwMakeContextCurrent(window);
+	double lastTime = glfwGetTime();
+	int frameCount = 0;
+
+	pipeline.clear_color(glm::vec4(149, 138, 153, 255));
+
 	while (!glfwWindowShouldClose(window))
 	{
-		pipeline.render();
-
 		double currentTime = glfwGetTime();
 		frameCount++;
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		pipeline.render();
+
 		if (currentTime - lastTime >= 1.0)
 		{
 			std::string s;
@@ -38,17 +37,11 @@ int main(int argc, char** argv)
 			lastTime = currentTime;
 			frameCount = 0;
 		}
-
-		glClearColor(1.0, 1.0, 1.0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
-
 		glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pipeline.pixels);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 	glfwTerminate();
-
-
 	return 0;
 }

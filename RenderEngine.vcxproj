@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="model.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="tgaimage.cpp" />
@@ -30,11 +29,11 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="mathtool.h" />
-    <ClInclude Include="model.h" />
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="tgaimage.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="triangle.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -139,12 +138,14 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>vulkan-1.lib;openGL32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib;$(VK_SDK_PATH)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
