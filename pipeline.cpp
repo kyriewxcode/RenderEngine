@@ -1,5 +1,4 @@
 #include "pipeline.h"
-#include <GLFW\glfw3.h>
 #include <algorithm>
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const glm::vec4* v)
@@ -189,15 +188,15 @@ void Pipeline::render()
 				//newtri.setColor(i, t->color->r, t->color->g, t->color->b);
 			}
 
-			triangle(newtri, viewspace_pos);
+			triangle(newtri, viewspace_pos, lightPos);
 		}
 	}
 }
 
-void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_pos)
+void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_pos, const glm::vec3 lightDir)
 {
 	auto v = t.toVector4();
-	auto colorrand = TGAColor(rand() % 255, rand() % 255, rand() % 255);
+	auto colorrand = glm::vec4(rand() % 255, rand() % 255, rand() % 255, 255);
 
 	int top = (int)ceil(std::max(v[0].y, std::max(v[1].y, v[2].y)));
 	int bottom = (int)floor(std::min(v[0].y, std::min(v[1].y, v[2].y)));
@@ -227,9 +226,9 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 					// shadingcoords
 					auto interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos[0], view_pos[1], view_pos[2], 1);
 
-					float intensity = sature(glm::dot(interpolated_normal, light_dir));
+					float intensity = sature(glm::dot(interpolated_normal, lightDir));
 
-					auto color = TGAColor(200 * intensity, 200 * intensity, 200 * intensity);
+					auto color = glm::vec4(lightColor.r * intensity, lightColor.g * intensity, lightColor.b * intensity, 255);
 
 					// set zbuffer
 					zbuffer[get_index(x, y)] = zp;

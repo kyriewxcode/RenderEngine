@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pipeline.cpp" />
-    <ClCompile Include="tgaimage.cpp" />
     <ClCompile Include="triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -30,7 +29,6 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="mathtool.h" />
     <ClInclude Include="pipeline.h" />
-    <ClInclude Include="tgaimage.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="triangle.h" />

@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	double lastTime = glfwGetTime();
 	int frameCount = 0;
 
-	pipeline.clear_color(glm::vec4(149, 138, 153, 255));
+	pipeline.clear_color(glm::vec4(0, 51, 102, 255));
 
 	while (!glfwWindowShouldClose(window))
 	{

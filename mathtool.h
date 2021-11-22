@@ -9,7 +9,6 @@
 #include <array>
 #include <vector>
 
-#include "tgaimage.h"
 #include "Timer.h"
 #include "triangle.h"
 

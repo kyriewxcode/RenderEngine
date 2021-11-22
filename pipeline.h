@@ -1,6 +1,5 @@
 #ifndef __PIPELINE_H__
 #define __PIPELINE_H__
-#include "tgaimage.h"
 #include "mathtool.h"
 #include "Entity.h"
 #include "triangle.h"
@@ -25,7 +24,8 @@ private:
 	glm::mat4x4 Viewport;
 	glm::mat4x4 Projection;
 
-	const glm::vec3 light_dir = { 1.f,1.f,1.f };
+	const glm::vec3 lightPos = { 1.f,1.f,1.f };
+	const glm::vec4 lightColor = { 250, 250, 250 ,255 };
 
 public:
 	Pipeline(std::vector<Entity> e) : entities(e)
@@ -49,7 +49,7 @@ private:
 	glm::mat4 get_model_matrix(Transform transform);
 	bool ClipSpaceCull(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3);
 	bool FaceCull(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3, Face face);
-	void triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_pos);
+	void triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_pos, const glm::vec3 lightDir);
 };
 
 #endif // !__PIPELINE_H__

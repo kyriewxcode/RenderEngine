@@ -1,11 +1,9 @@
 #ifndef __TRIANGLE_H__
 #define __TRIANGLE_H__
 #include "mathtool.h"
-#include "tgaimage.h"
 
 class Triangle
 {
-
 public:
 	glm::vec4 vert[3]; /*the original coordinates of the triangle, v0, v1, v2 in counter clockwise order*/
 	/*Per vertex values*/
@@ -13,7 +11,6 @@ public:
 	glm::vec2 tex_coords[3]; //texture u,v
 	glm::vec3 normal[3]; //normal vector for each vertex
 
-	TGAImage* tex = nullptr;
 	Triangle();
 
 	glm::vec4 a() const { return vert[0]; }
