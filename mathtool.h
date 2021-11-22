@@ -5,18 +5,16 @@
 //#include <Eigen/Dense>
 #include <iostream>
 #include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #include <array>
 #include <vector>
 
 #include "tgaimage.h"
 #include "Timer.h"
+#include "triangle.h"
 
-constexpr auto MY_PI = 3.1415926;
-constexpr auto TWO_PI(2.0 * MY_PI);
-constexpr double DEG_TO_RAD = MY_PI / 180.0;
-
-const int width = 800;
-const int height = 600;
+const int WIDTH = 800;
+const int HEIGHT = 600;
 
 #include "tiny_obj_loader.h"
 

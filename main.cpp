@@ -1,21 +1,32 @@
-﻿#pragma GCC optimize(3,"Ofast","inline")
-#include "main.h"
+﻿#include "main.h"
 
 int main(int argc, char** argv)
 {
 	glfwInit();
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-	GLFWwindow* window = glfwCreateWindow(width, height, "RenderEngine", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "RenderEngine", NULL, NULL);
 
-	const char* floor = "obj/floor.obj";
-	Entity plane(floor);
+	std::vector<Entity> entities;
+	const char* filename;
 
-	const char* cube = "obj/cube.obj";
-	Entity entity(cube);
+	filename = "obj/floor.obj";
+	Entity plane(filename);
+	plane.transform.position = glm::vec3(0, 0.f, 0);
+	plane.transform.rotation = glm::vec3(0.f, 0., 0);
+	plane.transform.scale = glm::vec3(6.f, 3.f, 3.f);
+	entities.push_back(plane);
+
+	filename = "obj/spot/spot_triangulated_good.obj";
+	Entity cube(filename);
+	cube.transform.position = glm::vec3(0, -1, 0);
+	cube.transform.rotation = glm::vec3(0, 30.f + 180.f, 0);
+	cube.transform.scale = glm::vec3(3.f, 3.f, 3.f);
+	entities.push_back(cube);
+
 	Shader shader;
-	Pipeline pipeline(entity, shader);
-	pipeline.zbuffer = std::vector<float>(width * height, std::numeric_limits<double>::max());
-	pipeline.pixels = new unsigned char[width * height * 4];
+	Pipeline pipeline(entities, shader);
+	pipeline.zbuffer = std::vector<float>(WIDTH * HEIGHT, std::numeric_limits<double>::max());
+	pipeline.pixels = new unsigned char[WIDTH * HEIGHT * 4];
 
 	glfwMakeContextCurrent(window);
 	double lastTime = glfwGetTime();
@@ -25,6 +36,7 @@ int main(int argc, char** argv)
 
 	while (!glfwWindowShouldClose(window))
 	{
+		Timer t;
 		double currentTime = glfwGetTime();
 		frameCount++;
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -39,7 +51,7 @@ int main(int argc, char** argv)
 			lastTime = currentTime;
 			frameCount = 0;
 		}
-		glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pipeline.pixels);
+		glDrawPixels(WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, pipeline.pixels);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

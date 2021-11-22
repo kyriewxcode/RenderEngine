@@ -49,7 +49,7 @@ static float sature(float n)
 	return n;
 }
 
-// = = = = == = == = = = ³É Ô± º¯ Êý = = = = = = = = = = = = = = = = =
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 static auto to_vec4(const glm::vec3& v3, float w)
 {
@@ -58,118 +58,27 @@ static auto to_vec4(const glm::vec3& v3, float w)
 
 int Pipeline::get_index(int x, int y)
 {
-	return (height - y) * width + x;
+	return (HEIGHT - y) * WIDTH + x;
 }
 
 glm::mat4 Pipeline::get_model_matrix(Transform transform)
 {
-	// Rotation
-	float angleX = glm::radians(transform.rotation.x);
-	glm::mat4 rotationX;
-	rotationX = {
-		1, 0, 0, 0,
-		0, cos(angleX),-sin(angleX), 0,
-		0, sin(angleX), cos(angleX), 0,
-		0, 0, 0, 1
-	};
-
-	float angleY = glm::radians(transform.rotation.y);
-	glm::mat4 rotationY;
-	rotationY = {
-		cos(angleY), 0, sin(angleY), 0,
-		0, 1, 0, 0,
-		-sin(angleY), 0, cos(angleY), 0,
-		0, 0, 0, 1
-	};
-
-	float angleZ = glm::radians(transform.rotation.z);
-	glm::mat4 rotationZ;
-	rotationZ = {
-		cos(angleZ), -sin(angleZ), 0, 0,
-		sin(angleZ), cos(angleZ), 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1
-	};
-	glm::mat4 rotationMatrix = rotationX * rotationY * rotationZ;
-
-	// Scale
-	glm::vec3 scale = transform.scale;
-	glm::mat4 scaleMatrix;
-	scaleMatrix = {
-		scale.x, 0, 0, 0,
-		0, scale.y, 0, 0,
-		0, 0, scale.z, 0,
-		0, 0, 0, 1
-	};
-
-	// Position
-	glm::vec3 pos = transform.position;
-	glm::mat4 translateMatrix;
-	translateMatrix = {
-		1, 0, 0, pos.x,
-		0, 1, 0, pos.y,
-		0, 0, 1, pos.z,
-		0, 0, 0, 1
-	};
-
-	return glm::transpose(translateMatrix) * glm::transpose(rotationMatrix) * glm::transpose(scaleMatrix);
-}
-
-glm::mat4 Pipeline::get_view_matrix(glm::vec3 eye_pos)
-{
-	glm::mat4 view(1);
-
-	glm::mat4 translate;
-	translate = {
-		1, 0, 0, -eye_pos[0],
-		0, 1, 0, -eye_pos[1],
-		0, 0, 1, -eye_pos[2],
-		0, 0, 0, 1
-	};
-
-	view = glm::transpose(translate) * view;
-
-	return view;
-}
-
-glm::mat4 Pipeline::get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
-{
-	glm::mat4 projection(1);
-
-	float n = zNear;
-	float f = zFar;
-	float t = n * tan(glm::radians(eye_fov / 2.0f));
-	float r = aspect_ratio * t;
-	float b = -t;
-	float l = -r;
-
-	glm::mat4 ortho(
-		2 / (r - l), 0, 0, -(l + r) / 2,
-		0, 2 / (t - b), 0, -(b + t) / 2,
-		0, 0, 2 / (n - f), -(f + n) / 2,
-		0, 0, 0, 1
-	);
-
-	glm::mat4 persp_to_ortho(
-		n, 0, 0, 0,
-		0, n, 0, 0,
-		0, 0, n + f, -(n * f),
-		0, 0, 1, 0
-	);
-
-	projection = glm::transpose(ortho) * glm::transpose(persp_to_ortho);
-
-
-	return projection;
+	glm::mat4 Model(1);
+	Model = glm::translate(Model, transform.position);
+	Model = glm::scale(Model, transform.scale);
+	Model = glm::rotate(Model, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
+	Model = glm::rotate(Model, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));;
+	Model = glm::rotate(Model, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
+	return Model;
 }
 
 void Pipeline::clear_color(glm::vec4 color)
 {
-	for (int x = 0; x < width; x++)
+	for (int x = 0; x < WIDTH; x++)
 	{
-		for (int y = 0; y < height; y++)
+		for (int y = 0; y < HEIGHT; y++)
 		{
-			auto index = y * width + x;
+			auto index = y * WIDTH + x;
 			pixels[index * 4 + 0] = color.r;
 			pixels[index * 4 + 1] = color.g;
 			pixels[index * 4 + 2] = color.b;
@@ -178,123 +87,109 @@ void Pipeline::clear_color(glm::vec4 color)
 	}
 }
 
-void Pipeline::render()
+bool Pipeline::ClipSpaceCull(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3)
 {
-	// set triangle
-	set_triangle_list(entity);
-
-	// get mvp matrix
-	ModelView = get_model_matrix(entity.transform);
-	Viewport = get_view_matrix(eye_pos);
-	Projection = get_projection_matrix(60.0f, width / height, -0.3f, -1000.f);
-	glm::mat4 mvp = Projection * Viewport * ModelView;
-
-	// rasterization
-	for (const auto& t : TriangleList)
-	{
-		Triangle newtri;
-
-		std::array<glm::vec3, 3> viewspace_pos
-		{
-			(Viewport * ModelView * t->vert[0]),
-			(Viewport * ModelView * t->vert[1]),
-			(Viewport * ModelView * t->vert[2])
-		};
-
-		glm::vec4 vertex[] = {
-				mvp * t->vert[0],
-				mvp * t->vert[1],
-				mvp * t->vert[2]
-		};
-
-		for (auto& v : vertex)
-		{
-			v.x /= v.w;
-			v.y /= v.w;
-			if (v.x > 1.f || v.x < -1.f || v.y>1.f || v.y < -1.f)
-			{
-				std::cout << "out screen" << std::endl;
-			}
-			v.z /= v.w;
-		}
-
-		glm::mat4 inv_trans = glm::transpose(glm::inverse(Viewport * ModelView));
-		glm::vec4 n[] = {
-				inv_trans * to_vec4(t->normal[0], 0.0f),
-				inv_trans * to_vec4(t->normal[1], 0.0f),
-				inv_trans * to_vec4(t->normal[2], 0.0f)
-		};
-
-		// viewport transformation
-		float f1 = (50.f - 0.1f) / 2.0f;
-		float f2 = (50.f + 0.1f) / 2.0f;
-		for (auto& v : vertex)
-		{
-			v.x = 0.5f * (float)width * (v.x + 1.0f);
-			v.y = 0.5f * (float)height * (v.y + 1.0f);
-			v.z = v.z * f1 + f2;
-		}
-
-		for (int i = 0; i < 3; ++i)
-		{
-			// screen space position
-			newtri.setVertex(i, vertex[i]);
-			newtri.setNormal(i, glm::vec3(n[i]));
-			//newtri.setColor(i, t->color->r, t->color->g, t->color->b);
-		}
-
-		triangle(newtri, viewspace_pos);
-	}
-	TriangleList.clear();
+	if (v1.w < camera.zNear && v2.w < camera.zNear && v3.w < camera.zNear)
+		return false;
+	if (v1.w > camera.zFar && v2.w > camera.zFar && v3.w > camera.zFar)
+		return false;
+	if (v1.x > v1.w && v2.x > v2.w && v3.x > v3.w)
+		return false;
+	if (v1.x < -v1.w && v2.x < -v2.w && v3.x < -v3.w)
+		return false;
+	if (v1.y > v1.w && v2.y > v2.w && v3.y > v3.w)
+		return false;
+	if (v1.y < -v1.w && v2.y < -v2.w && v3.y < -v3.w)
+		return false;
+	if (v1.z > v1.w && v2.z > v2.w && v3.z > v3.w)
+		return false;
+	if (v1.z < -v1.w && v2.z < -v2.w && v3.z < -v3.w)
+		return false;
+	return true;
 }
 
-void Pipeline::set_triangle_list(Entity entity)
+bool Pipeline::FaceCull(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3, Face face)
 {
-	// loop over shapes
-	for (size_t s = 0; s < entity.shapes.size(); s++)
+	glm::vec3 tmp1 = glm::vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+	glm::vec3 tmp2 = glm::vec3(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z);
+
+	glm::vec3 normal = glm::normalize(glm::cross(tmp1, tmp2));
+	glm::vec3 view = camera.transform.position; // camera lookat glm::vec3(0,0,0)
+
+	if (face == Face::Back)
+		return glm::dot(normal, view) > 0;
+	else
+		return glm::dot(normal, view) < 0;
+}
+
+void Pipeline::render()
+{
+	// rasterization
+	for (const auto entity : entities)
 	{
-		size_t index_offset = 0;
-		// loop over faces(polygon)
-		for (size_t f = 0; f < entity.shapes[s].mesh.num_face_vertices.size(); f++)
+		ModelView = get_model_matrix(entity.transform);
+		glm::mat4 mvp = Projection * Viewport * ModelView;
+		for (const auto& t : entity.triangles)
 		{
-			Triangle* t = new Triangle();
-			size_t fv = size_t(entity.shapes[s].mesh.num_face_vertices[f]);
-			//loop over vertices in the face
-			for (size_t v = 0; v < fv; v++)
+			Triangle newtri;
+
+			std::array<glm::vec3, 3> viewspace_pos
 			{
-				// vertex data
-				tinyobj::index_t idx = entity.shapes[s].mesh.indices[index_offset + v];
-				tinyobj::real_t vx = entity.attrib.vertices[3 * size_t(idx.vertex_index) + 0];
-				tinyobj::real_t vy = entity.attrib.vertices[3 * size_t(idx.vertex_index) + 1];
-				tinyobj::real_t vz = entity.attrib.vertices[3 * size_t(idx.vertex_index) + 2];
-				t->setVertex(v, glm::vec4(vx, vy, vz, 1));
+				(Viewport * ModelView * t->vert[0]),
+				(Viewport * ModelView * t->vert[1]),
+				(Viewport * ModelView * t->vert[2])
+			};
 
-				// normal data
-				if (idx.normal_index >= 0)
-				{
-					tinyobj::real_t nx = entity.attrib.normals[3 * size_t(idx.normal_index) + 0];
-					tinyobj::real_t ny = entity.attrib.normals[3 * size_t(idx.normal_index) + 1];
-					tinyobj::real_t nz = entity.attrib.normals[3 * size_t(idx.normal_index) + 2];
-					t->setNormal(v, glm::vec3(nx, ny, nz));
-				}
+			glm::vec4 vertex[] = {
+					mvp * t->vert[0],
+					mvp * t->vert[1],
+					mvp * t->vert[2]
+			};
 
-				// texcoord data
-				if (idx.texcoord_index >= 0)
-				{
-					tinyobj::real_t tx = entity.attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
-					tinyobj::real_t ty = entity.attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
-					t->setTexCoord(v, glm::vec2(tx, ty));
-				}
-
-				// vertex colors
-				tinyobj::real_t red = entity.attrib.colors[3 * size_t(idx.vertex_index) + 0];
-				tinyobj::real_t green = entity.attrib.colors[3 * size_t(idx.vertex_index) + 1];
-				tinyobj::real_t blue = entity.attrib.colors[3 * size_t(idx.vertex_index) + 2];
-				t->setColor(v, red, green, blue);
+			if (!ClipSpaceCull(vertex[0], vertex[1], vertex[2]))
+			{
+				continue;
 			}
-			TriangleList.push_back(t);
-			index_offset += fv;
-			entity.shapes[s].mesh.material_ids[f];
+
+			// translate to NDC
+			for (auto& v : vertex)
+			{
+				v.x /= v.w;
+				v.y /= v.w;
+				v.z /= v.w;
+			}
+
+			if (!FaceCull(vertex[0], vertex[1], vertex[2], Face::Back))
+			{
+				continue;
+			}
+
+			glm::mat4 inv_trans = glm::transpose(glm::inverse(Viewport * ModelView));
+			glm::vec4 n[] = {
+					inv_trans * to_vec4(t->normal[0], 0.0f),
+					inv_trans * to_vec4(t->normal[1], 0.0f),
+					inv_trans * to_vec4(t->normal[2], 0.0f)
+			};
+
+			// viewport transformation
+			float f1 = (50.f - 0.1f) / 2.0f;
+			float f2 = (50.f + 0.1f) / 2.0f;
+			for (auto& v : vertex)
+			{
+				v.x = 0.5f * (float)WIDTH * (v.x + 1.0f);
+				v.y = 0.5f * (float)HEIGHT * (v.y + 1.0f);
+				v.z = v.z * f1 + f2;
+			}
+
+			for (int i = 0; i < 3; ++i)
+			{
+				// screen space position
+				newtri.setVertex(i, vertex[i]);
+				newtri.setNormal(i, glm::vec3(n[i]));
+				//newtri.setColor(i, t->color->r, t->color->g, t->color->b);
+			}
+
+			triangle(newtri, viewspace_pos);
 		}
 	}
 }
@@ -321,9 +216,6 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 				float Z = 1.0f / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w); // compute point.w
 				zp *= Z;
 
-				if (get_index(x, y) > width * height)
-					continue;
-
 				if (zp < zbuffer[get_index(x, y)])
 				{
 					// color
@@ -343,7 +235,7 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 					zbuffer[get_index(x, y)] = zp;
 
 					//set color
-					auto index = y * width + x;
+					auto index = y * WIDTH + x;
 					for (int i = 0; i < 4; i++)
 					{
 						pixels[index * 4 + i] = color[i] * intensity;
