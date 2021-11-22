@@ -61,35 +61,58 @@ int Pipeline::get_index(int x, int y)
 	return (height - y) * width + x;
 }
 
-glm::mat4 Pipeline::get_model_matrix(float angle)
+glm::mat4 Pipeline::get_model_matrix(Transform transform)
 {
-	angle = angle * (float)MY_PI / 180.f;
-
-	glm::mat4 rotation;
-	rotation = {
-		cos(angle), 0, sin(angle), 0,
-		0, 1, 0, 0,
-		-sin(angle), 0, cos(angle), 0,
+	// Rotation
+	float angleX = glm::radians(transform.rotation.x);
+	glm::mat4 rotationX;
+	rotationX = {
+		1, 0, 0, 0,
+		0, cos(angleX),-sin(angleX), 0,
+		0, sin(angleX), cos(angleX), 0,
 		0, 0, 0, 1
 	};
 
-	glm::mat4 scale;
-	scale = {
-		1, 0, 0, 0,
+	float angleY = glm::radians(transform.rotation.y);
+	glm::mat4 rotationY;
+	rotationY = {
+		cos(angleY), 0, sin(angleY), 0,
 		0, 1, 0, 0,
+		-sin(angleY), 0, cos(angleY), 0,
+		0, 0, 0, 1
+	};
+
+	float angleZ = glm::radians(transform.rotation.z);
+	glm::mat4 rotationZ;
+	rotationZ = {
+		cos(angleZ), -sin(angleZ), 0, 0,
+		sin(angleZ), cos(angleZ), 0, 0,
 		0, 0, 1, 0,
 		0, 0, 0, 1
 	};
+	glm::mat4 rotationMatrix = rotationX * rotationY * rotationZ;
 
-	glm::mat4 translate;
-	translate = {
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
+	// Scale
+	glm::vec3 scale = transform.scale;
+	glm::mat4 scaleMatrix;
+	scaleMatrix = {
+		scale.x, 0, 0, 0,
+		0, scale.y, 0, 0,
+		0, 0, scale.z, 0,
 		0, 0, 0, 1
 	};
 
-	return translate * rotation * scale;
+	// Position
+	glm::vec3 pos = transform.position;
+	glm::mat4 translateMatrix;
+	translateMatrix = {
+		1, 0, 0, pos.x,
+		0, 1, 0, pos.y,
+		0, 0, 1, pos.z,
+		0, 0, 0, 1
+	};
+
+	return glm::transpose(translateMatrix) * glm::transpose(rotationMatrix) * glm::transpose(scaleMatrix);
 }
 
 glm::mat4 Pipeline::get_view_matrix(glm::vec3 eye_pos)
@@ -115,7 +138,7 @@ glm::mat4 Pipeline::get_projection_matrix(float eye_fov, float aspect_ratio, flo
 
 	float n = zNear;
 	float f = zFar;
-	float t = -n * tan((eye_fov / 2.0f) * DEG_TO_RAD);
+	float t = n * tan(glm::radians(eye_fov / 2.0f));
 	float r = aspect_ratio * t;
 	float b = -t;
 	float l = -r;
@@ -161,9 +184,9 @@ void Pipeline::render()
 	set_triangle_list(entity);
 
 	// get mvp matrix
-	ModelView = get_model_matrix(45.f);
+	ModelView = get_model_matrix(entity.transform);
 	Viewport = get_view_matrix(eye_pos);
-	Projection = get_projection_matrix(45.0f, 1.f, 0.1f, 50.f);
+	Projection = get_projection_matrix(60.0f, width / height, -0.3f, -1000.f);
 	glm::mat4 mvp = Projection * Viewport * ModelView;
 
 	// rasterization
@@ -314,17 +337,17 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 
 					float intensity = sature(glm::dot(interpolated_normal, light_dir));
 
-					auto color = TGAColor(250 * intensity, 250 * intensity, 250 * intensity);
+					auto color = TGAColor(200 * intensity, 200 * intensity, 200 * intensity);
 
 					// set zbuffer
 					zbuffer[get_index(x, y)] = zp;
 
 					//set color
 					auto index = y * width + x;
-					pixels[index * 4 + 0] = 250 * intensity;
-					pixels[index * 4 + 1] = 250 * intensity;
-					pixels[index * 4 + 2] = 250 * intensity;
-					pixels[index * 4 + 3] = 250 * intensity;
+					for (int i = 0; i < 4; i++)
+					{
+						pixels[index * 4 + i] = color[i] * intensity;
+					}
 				}
 			}
 		}

@@ -1,15 +1,17 @@
-﻿#include "main.h"
+﻿#pragma GCC optimize(3,"Ofast","inline")
+#include "main.h"
 
 int main(int argc, char** argv)
 {
 	glfwInit();
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	GLFWwindow* window = glfwCreateWindow(width, height, "RenderEngine", NULL, NULL);
-	
-	const char* inputfile = "obj/diablo3_pose/diablo3_pose.obj";
-	const char* cube = "obj/cube.obj";
-	Entity entity(inputfile);
 
+	const char* floor = "obj/floor.obj";
+	Entity plane(floor);
+
+	const char* cube = "obj/cube.obj";
+	Entity entity(cube);
 	Shader shader;
 	Pipeline pipeline(entity, shader);
 	pipeline.zbuffer = std::vector<float>(width * height, std::numeric_limits<double>::max());

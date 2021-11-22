@@ -18,8 +18,8 @@ public:
 
 private:
 
-	glm::vec3 eye_pos = { 0.f,0.f,3.f };
-	glm::vec3 light_dir = { 0.f,1.f,1.f };
+	glm::vec3 eye_pos = { 0.f,0.f,-10.f };
+	glm::vec3 light_dir = { 2.f,2.f,-2.f };
 
 	glm::mat4x4 ModelView;
 	glm::mat4x4 Viewport;
@@ -37,7 +37,7 @@ public:
 private:
 	int get_index(int x, int y);
 
-	glm::mat4x4 get_model_matrix(float rotation_angle);
+	glm::mat4 get_model_matrix(Transform transform);
 	glm::mat4x4 get_view_matrix(glm::vec3 eye_pos);
 	glm::mat4x4 get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar);
 	void set_triangle_list(Entity entity);
