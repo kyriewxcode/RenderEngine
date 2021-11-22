@@ -20,9 +20,6 @@
     <ClCompile Include="pipeline.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="triangle.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -35,9 +32,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="mathtool.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Entity.h">

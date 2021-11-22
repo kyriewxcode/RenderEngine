@@ -16,7 +16,6 @@
 #include "mathtool.h"
 
 #include "Entity.h"
-#include "Shader.h"
 #include "pipeline.h"
 
 #endif // !__MAIN_H__

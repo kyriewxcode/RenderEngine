@@ -2,7 +2,6 @@
 #define __PIPELINE_H__
 #include "tgaimage.h"
 #include "mathtool.h"
-#include "Shader.h"
 #include "Entity.h"
 #include "triangle.h"
 #include "Camera.h"
@@ -17,7 +16,6 @@ class Pipeline
 {
 public:
 	Camera camera;
-	Shader shader;
 	std::vector<Entity> entities;
 	std::vector<float> zbuffer;
 	unsigned char* pixels;
@@ -30,7 +28,7 @@ private:
 	const glm::vec3 light_dir = { 1.f,1.f,1.f };
 
 public:
-	Pipeline(std::vector<Entity> e, Shader s) : entities(e), shader(s)
+	Pipeline(std::vector<Entity> e) : entities(e)
 	{
 		zbuffer = std::vector<float>(WIDTH * HEIGHT + 1, std::numeric_limits<double>::max());
 		pixels = new unsigned char[WIDTH * HEIGHT * 4];

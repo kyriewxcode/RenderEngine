@@ -23,8 +23,7 @@ int main(int argc, char** argv)
 	cube.transform.scale = glm::vec3(3.f, 3.f, 3.f);
 	entities.push_back(cube);
 
-	Shader shader;
-	Pipeline pipeline(entities, shader);
+	Pipeline pipeline(entities);
 	pipeline.zbuffer = std::vector<float>(WIDTH * HEIGHT, std::numeric_limits<double>::max());
 	pipeline.pixels = new unsigned char[WIDTH * HEIGHT * 4];
 
@@ -36,7 +35,6 @@ int main(int argc, char** argv)
 
 	while (!glfwWindowShouldClose(window))
 	{
-		Timer t;
 		double currentTime = glfwGetTime();
 		frameCount++;
 		glClear(GL_COLOR_BUFFER_BIT);
