@@ -1,6 +1,6 @@
 #ifndef __PIPELINE_H__
 #define __PIPELINE_H__
-#include "mathtool.h"
+#include "math.h"
 #include "Entity.h"
 #include "triangle.h"
 #include "Camera.h"

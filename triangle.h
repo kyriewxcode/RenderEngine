@@ -1,6 +1,6 @@
 #ifndef __TRIANGLE_H__
 #define __TRIANGLE_H__
-#include "mathtool.h"
+#include "math.h"
 
 class Triangle
 {

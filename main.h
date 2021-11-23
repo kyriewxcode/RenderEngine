@@ -13,7 +13,7 @@
 #include <iostream>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "mathtool.h"
+#include "math.h"
 
 #include "Entity.h"
 #include "pipeline.h"

@@ -12,6 +12,9 @@
 #include "Timer.h"
 #include "triangle.h"
 
+typedef glm::vec4 Color;
+typedef unsigned int UINT32;
+
 const int WIDTH = 800;
 const int HEIGHT = 600;
 

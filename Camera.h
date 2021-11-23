@@ -1,6 +1,6 @@
 #ifndef __CAMERA_H__
 #define __CAMERA_H__
-#include "mathtool.h"
+#include "math.h"
 #include "Entity.h"
 
 struct  Camera
