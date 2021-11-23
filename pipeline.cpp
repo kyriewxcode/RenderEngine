@@ -1,5 +1,4 @@
 #include "pipeline.h"
-#include <algorithm>
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const glm::vec4* v)
 {
@@ -78,10 +77,10 @@ void Pipeline::clear_color(glm::vec4 color)
 		for (int y = 0; y < HEIGHT; y++)
 		{
 			auto index = y * WIDTH + x;
-			pixels[index * 4 + 0] = color.r;
-			pixels[index * 4 + 1] = color.g;
-			pixels[index * 4 + 2] = color.b;
-			pixels[index * 4 + 3] = color.a;
+			for (int i = 0; i < 4; i++)
+			{
+				pixels[index * 4 + i] = color[i];
+			}
 		}
 	}
 }
@@ -145,11 +144,6 @@ void Pipeline::render()
 					mvp * t->vert[2]
 			};
 
-			if (!ClipSpaceCull(vertex[0], vertex[1], vertex[2]))
-			{
-				continue;
-			}
-
 			// translate to NDC
 			for (auto& v : vertex)
 			{
@@ -207,6 +201,7 @@ void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_
 	{
 		for (int y = bottom; y <= top; y++)
 		{
+			if (get_index(x, y) > zbuffer.size()) continue;
 			if (insideTriangle(x, y, t.vert))
 			{
 				// (x,y) = alpha A + beta B + gamma C

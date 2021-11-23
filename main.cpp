@@ -11,9 +11,9 @@ int main(int argc, char** argv)
 
 	filename = "obj/floor.obj";
 	Entity plane(filename);
-	plane.transform.position = glm::vec3(0, 0.f, 0);
-	plane.transform.rotation = glm::vec3(0.f, 0., 0);
-	plane.transform.scale = glm::vec3(6.f, 3.f, 3.f);
+	plane.transform.position = glm::vec3(0, -2.f, 0);
+	plane.transform.rotation = glm::vec3(0, 0, 0);
+	plane.transform.scale = glm::vec3(6.f, 1.f, 2.f);
 	entities.push_back(plane);
 
 	filename = "obj/spot/spot_triangulated_good.obj";

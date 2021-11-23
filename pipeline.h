@@ -30,7 +30,7 @@ private:
 public:
 	Pipeline(std::vector<Entity> e) : entities(e)
 	{
-		zbuffer = std::vector<float>(WIDTH * HEIGHT + 1, std::numeric_limits<double>::max());
+		zbuffer = std::vector<float>((WIDTH + 1) * (HEIGHT + 1), std::numeric_limits<double>::max());
 		pixels = new unsigned char[WIDTH * HEIGHT * 4];
 
 		Viewport = glm::lookAt(
