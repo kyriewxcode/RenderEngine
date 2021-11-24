@@ -1,5 +1,6 @@
-﻿#include "Screen.h"
-#include "DeviceContext.h"
+﻿#include "Main.h"
+#include "Screen.h"
+#include "Pipeline.h"
 
 extern const float width{ 800 }, height{ 600 };
 
@@ -18,12 +19,27 @@ int main(void)
 
 	Device device(screen.m_fb, width, height);
 
+	Pipeline pipeline(&device);
+
+	Entity box("obj/cube/cube.obj");
+	pipeline.addEntity(box);
+
+	clock_t t1 = clock();
+	int fpsCount = 0;
 	while (screen.m_exit == 0 && screen.m_keys[VK_ESCAPE] == 0)
 	{
+		float deltaTime = (clock() - t1) * 1.0 / CLOCKS_PER_SEC;
+		if (deltaTime >= 1.f)
+		{
+			std::cout << fpsCount << " FPS" << std::endl;
+			fpsCount = 0;
+			t1 = clock();
+		}
 		screen.dispatch();
 		device.clear();
-
+		pipeline.draw();
 		screen.update();
+		fpsCount++;
 	}
 
 	return 0;

@@ -1,5 +1,5 @@
 #pragma once
-#include"math.h"
+#include"Math.h"
 
 class Device
 {
@@ -8,8 +8,8 @@ public:
 	~Device();
 	void clear();
 	float getZbuffer(const int& x, const int& y);
-	float setZbuffer(const int& x, const int& y, const float& zValue);
-	void drawPixel(const int& x, const int& y, const Color color);
+	void setZbuffer(const int& x, const int& y, const float& zValue);
+	void drawPixel(const int& x, const int& y, const Color& color);
 
 private:
 	int m_width;
