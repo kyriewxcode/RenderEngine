@@ -1,9 +1,12 @@
+#include "Screen.h"
 #include "Entity.h"
 
 Entity::Entity(const char* filename)
 {
 	loadObj(filename);
 }
+
+glm::mat4 matRotate(1);
 
 glm::mat4 Entity::modelMatrix()
 {
@@ -13,7 +16,16 @@ glm::mat4 Entity::modelMatrix()
 	Model = glm::rotate(Model, glm::radians(45.f), transform.right());
 	Model = glm::rotate(Model, glm::radians(45.f), transform.up());;
 	Model = glm::rotate(Model, glm::radians(0.f), transform.forward());
+	Model = Model * matRotate;
 	return Model;
+}
+
+void Entity::update()
+{
+	if (Screen::m_keys[VK_LEFT])
+	{
+		matRotate = glm::rotate(matRotate, glm::radians(5.f), transform.up());;
+	}
 }
 
 void Entity::loadObj(const char* filename)
@@ -64,7 +76,7 @@ void Entity::loadObj(const char* filename)
 				float nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
 				float ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
 				float nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
-				t->setNormal(v, Normal(nx, ny, nz));
+				t->setNormal(v, Normal(nx, ny, nz, 1));
 			}
 
 			if (idx.texcoord_index >= 0)

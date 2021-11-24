@@ -28,6 +28,8 @@ int main(void)
 	int fpsCount = 0;
 	while (screen.m_exit == 0 && screen.m_keys[VK_ESCAPE] == 0)
 	{
+		box.update();
+
 		float deltaTime = (clock() - t1) * 1.0 / CLOCKS_PER_SEC;
 		if (deltaTime >= 1.f)
 		{

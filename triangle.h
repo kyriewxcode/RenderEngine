@@ -25,7 +25,7 @@ public:
 
 	void setNormal(int index, Normal n)
 	{
-		normal[index] = n;
+		normal[index] = glm::normalize(n);
 	}
 
 	void setTexcoord(int index, Texcoord uv)
@@ -36,6 +36,15 @@ public:
 	void setColor(int index, Color c)
 	{
 		color[index] = c;
+	}
+
+	Normal worldNormal(glm::mat4 mvp)
+	{
+		auto n0 = normal[0] * mvp;
+		auto n1 = normal[1] * mvp;
+		auto n2 = normal[2] * mvp;
+
+		return (n0 + n1 + n2) / 3.f;
 	}
 
 	Normal getNormal()

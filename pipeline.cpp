@@ -21,7 +21,7 @@ bool Pipeline::cullBackface(const Vector& v1, const Vector& v2, const Vector& v3
 {
 	glm::vec3 vec1 = v3 - v2;
 	glm::vec3 vec2 = v2 - v1;
-	Normal normal = glm::cross(vec1, vec2);
+	glm::vec3 normal = glm::cross(vec1, vec2);
 
 	if (normal.z <= 0.f)
 		return false;
@@ -96,7 +96,7 @@ void Pipeline::draw()
 				transformClip2NDC(newVertex[i]);
 				transformNDC2screen(newVertex[i]);
 			}
-			drawTriangle(newVertex[0], newVertex[1], newVertex[2], triangle->getNormal());
+			drawTriangle(newVertex[0], newVertex[1], newVertex[2], glm::normalize(triangle->getNormal()));
 		}
 	}
 }
@@ -113,7 +113,6 @@ void Pipeline::drawTriangle(Vector& v1, Vector& v2, Vector& v3, Normal normal)
 	glm::vec3 lightDir = light.transform.position;
 	Vector v[3]{ v1,v2,v3 };
 	auto colorrand = glm::vec4(rand() % 100 / (double)101, rand() % 100 / (double)101, rand() % 100 / (double)101, 1);
-	Color c = Color(1, 1, 1, 1);
 
 	int top = (int)ceil(std::max(v1.y, std::max(v2.y, v3.y)));
 	int bottom = (int)floor(std::min(v1.y, std::min(v2.y, v3.y)));
@@ -134,10 +133,10 @@ void Pipeline::drawTriangle(Vector& v1, Vector& v2, Vector& v3, Normal normal)
 				{
 					m_device->setZbuffer(x, y, zp);
 
-					float intensity = sature(glm::dot(normal, lightDir));
+					float intensity = sature(glm::dot((glm::vec3)normal, lightDir));
 					intensity += 0.1;
-
-					m_device->drawPixel(x, y, c * intensity);
+					Color c = Color(intensity, intensity, intensity, 1);
+					m_device->drawPixel(x, y, c);
 				}
 			}
 		}

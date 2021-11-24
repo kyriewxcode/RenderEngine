@@ -15,6 +15,7 @@ public:
 public:
 	Entity(const char* filename);
 	glm::mat4 modelMatrix();
+	void update();
 
 private:
 	void loadObj(const char* filename);
