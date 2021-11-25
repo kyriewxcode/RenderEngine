@@ -12,12 +12,12 @@ class Pipeline
 {
 public:
 	Pipeline(Device* device);
-	void addEntity(Entity entity);
+	void addEntity(Entity* entity);
 	void switchMode();
 	void draw();
 
 private:
-	bool cullBackface(const Vector& v1, const Vector& v2, const Vector& v3);
+	bool shouldCullBack(const Vector& v1, const Vector& v2, const Vector& v3);
 	void transformClip2NDC(Vector& vert);
 	void transformNDC2screen(Vector& vert);
 	bool insideTriangle(int x, int y, const Vector* _v);
@@ -27,7 +27,7 @@ private:
 private:
 	Camera camera;
 	Light light;
-	std::vector<Entity> entities;
+	std::vector<Entity*> entities;
 	Device* m_device;
 	bool m_texMode = true;
 };

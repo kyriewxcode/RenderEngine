@@ -8,7 +8,10 @@ public:
 	Transform transform;
 
 public:
-	Camera() { transform.position = glm::vec3(0, 0, 10.f); }
+	Camera()
+	{
+		transform.position = glm::vec3(0, 0, -10.f);
+	}
 	glm::mat4 viewMatrix();
 	glm::mat4 projectionMatrix();
 

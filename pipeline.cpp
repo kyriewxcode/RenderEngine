@@ -7,7 +7,7 @@ Pipeline::Pipeline(Device* device)
 	m_device = device;
 }
 
-void Pipeline::addEntity(Entity entity)
+void Pipeline::addEntity(Entity* entity)
 {
 	entities.push_back(entity);
 }
@@ -17,30 +17,36 @@ void Pipeline::switchMode()
 	m_texMode = !m_texMode;
 }
 
-bool Pipeline::cullBackface(const Vector& v1, const Vector& v2, const Vector& v3)
+bool Pipeline::shouldCullBack(const Vector& v1, const Vector& v2, const Vector& v3)
 {
-	glm::vec3 vec1 = v3 - v2;
-	glm::vec3 vec2 = v2 - v1;
-	glm::vec3 normal = glm::cross(vec1, vec2);
-
-	if (normal.z <= 0.f)
-		return false;
-	else
+	glm::vec3 tmp1 = glm::vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+	glm::vec3 tmp2 = glm::vec3(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z);
+	glm::vec3 normal = glm::cross(tmp1, tmp2);
+	glm::vec3 view = camera.transform.forward();
+	float res = glm::dot(view, normal);
+	if (res < 0)
 		return true;
+	else
+		return false;
 }
 
 void Pipeline::transformClip2NDC(Vector& vert)
 {
-	vert /= vert.w;
+	vert.x /= vert.w;
+	vert.y /= vert.w;
+	vert.z /= vert.w;
 }
 
 void Pipeline::transformNDC2screen(Vector& vert)
 {
 	float map = (vert.x + 1.f) / 2.f;
 	vert.x = WIDTH * map;
-
 	map = 1.f - ((vert.y + 1.f) / 2.f);
 	vert.y = HEIGHT * map;
+
+	float f1 = (50.f - 0.1f) / 2.0f;
+	float f2 = (50.f + 0.1f) / 2.0f;
+	vert.z = vert.z * f1 + f2;
 }
 
 bool Pipeline::insideTriangle(int x, int y, const Vector* _v)
@@ -74,13 +80,13 @@ void Pipeline::draw()
 {
 	for (auto& entity : entities)
 	{
-		auto model = entity.modelMatrix();
+		auto model = entity->modelMatrix();
 		auto view = camera.viewMatrix();
 		auto project = camera.projectionMatrix();
 		auto mvp = project * view * model;
 
 		// TODO: vertex shader
-		for (auto& triangle : entity.m_triangles)
+		for (auto& triangle : entity->m_triangles)
 		{
 			Vector newVertex[3]
 			{
@@ -89,13 +95,18 @@ void Pipeline::draw()
 				mvp * triangle->vertexs[2]
 			};
 
-			if (cullBackface(newVertex[0], newVertex[1], newVertex[2])) continue;
-
 			for (int i = 0; i < 3; i++)
 			{
 				transformClip2NDC(newVertex[i]);
+			}
+
+			if (shouldCullBack(newVertex[0], newVertex[1], newVertex[2])) continue;
+
+			for (int i = 0; i < 3; i++)
+			{
 				transformNDC2screen(newVertex[i]);
 			}
+
 			drawTriangle(newVertex[0], newVertex[1], newVertex[2], glm::normalize(triangle->getNormal()));
 		}
 	}
@@ -134,8 +145,9 @@ void Pipeline::drawTriangle(Vector& v1, Vector& v2, Vector& v3, Normal normal)
 					m_device->setZbuffer(x, y, zp);
 
 					float intensity = sature(glm::dot((glm::vec3)normal, lightDir));
-					intensity += 0.1;
-					Color c = Color(intensity, intensity, intensity, 1);
+					intensity *= 0.8;
+					intensity += 0.2;
+					Color c = Color(245 * intensity, 245 * intensity, 220 * intensity, 255);
 					m_device->drawPixel(x, y, c);
 				}
 			}

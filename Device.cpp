@@ -76,7 +76,6 @@ void Device::drawPixel(const int& x, const int& y, const Color& color)
 
 UINT32 Device::gdiColorTransform(Color color)
 {
-	color *= 255.f;
 	color.r = (color.r > 255.f) ? 255.f : color.r;
 	color.g = (color.g > 255.f) ? 255.f : color.g;
 	color.b = (color.b > 255.f) ? 255.f : color.b;

@@ -6,17 +6,14 @@ Entity::Entity(const char* filename)
 	loadObj(filename);
 }
 
-glm::mat4 matRotate(1);
-
 glm::mat4 Entity::modelMatrix()
 {
 	glm::mat4 Model(1);
 	Model = glm::translate(Model, transform.position);
 	Model = glm::scale(Model, transform.scale);
-	Model = glm::rotate(Model, glm::radians(45.f), transform.right());
-	Model = glm::rotate(Model, glm::radians(45.f), transform.up());;
-	Model = glm::rotate(Model, glm::radians(0.f), transform.forward());
-	Model = Model * matRotate;
+	Model = glm::rotate(Model, glm::radians(transform.eulerAngles.x), vecRight);
+	Model = glm::rotate(Model, glm::radians(transform.eulerAngles.y), vecUp);;
+	Model = glm::rotate(Model, glm::radians(transform.eulerAngles.z), vecForward);
 	return Model;
 }
 
@@ -24,8 +21,23 @@ void Entity::update()
 {
 	if (Screen::m_keys[VK_LEFT])
 	{
-		matRotate = glm::rotate(matRotate, glm::radians(5.f), transform.up());;
+		transform.eulerAngles.y -= 5.f;
 	}
+	if (Screen::m_keys[VK_RIGHT])
+	{
+		transform.eulerAngles.y += 5.f;
+	}
+	if (Screen::m_keys[VK_UP])
+	{
+		transform.eulerAngles.x += 5.f;
+	}
+	if (Screen::m_keys[VK_DOWN])
+	{
+		transform.eulerAngles.x -= 5.f;
+	}
+
+	if (transform.eulerAngles.x > 360.f || transform.eulerAngles.x < -360.f) transform.eulerAngles.x = 0;
+	if (transform.eulerAngles.y > 360.f || transform.eulerAngles.y < -360.f) transform.eulerAngles.y = 0;
 }
 
 void Entity::loadObj(const char* filename)

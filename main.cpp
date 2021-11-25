@@ -22,7 +22,12 @@ int main(void)
 	Pipeline pipeline(&device);
 
 	Entity box("obj/cube/cube.obj");
-	pipeline.addEntity(box);
+	box.transform.eulerAngles = glm::vec3(0, 0, 0);
+	pipeline.addEntity(&box);
+
+	Entity plane("obj/floor.obj");
+	plane.transform.scale = glm::vec3(3);
+	pipeline.addEntity(&plane);
 
 	clock_t t1 = clock();
 	int fpsCount = 0;
