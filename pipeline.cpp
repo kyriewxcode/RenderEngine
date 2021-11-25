@@ -1,14 +1,49 @@
-#include "pipeline.h"
+#include "Pipeline.h"
+#include <algorithm>
+#include <array>
 
-static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const glm::vec4* v)
+Pipeline::Pipeline(Device* device)
 {
-	float c1 = (x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * y + v[1].x * v[2].y - v[2].x * v[1].y) / (v[0].x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * v[0].y + v[1].x * v[2].y - v[2].x * v[1].y);
-	float c2 = (x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * y + v[2].x * v[0].y - v[0].x * v[2].y) / (v[1].x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * v[1].y + v[2].x * v[0].y - v[0].x * v[2].y);
-	float c3 = (x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * y + v[0].x * v[1].y - v[1].x * v[0].y) / (v[2].x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * v[2].y + v[0].x * v[1].y - v[1].x * v[0].y);
-	return { c1,c2,c3 };
+	m_device = device;
 }
 
-static bool insideTriangle(int x, int y, const glm::vec4* _v)
+void Pipeline::addEntity(Entity entity)
+{
+	entities.push_back(entity);
+}
+
+void Pipeline::switchMode()
+{
+	m_texMode = !m_texMode;
+}
+
+bool Pipeline::cullBackface(const Vector& v1, const Vector& v2, const Vector& v3)
+{
+	glm::vec3 vec1 = v3 - v2;
+	glm::vec3 vec2 = v2 - v1;
+	glm::vec3 normal = glm::cross(vec1, vec2);
+
+	if (normal.z <= 0.f)
+		return false;
+	else
+		return true;
+}
+
+void Pipeline::transformClip2NDC(Vector& vert)
+{
+	vert /= vert.w;
+}
+
+void Pipeline::transformNDC2screen(Vector& vert)
+{
+	float map = (vert.x + 1.f) / 2.f;
+	vert.x = WIDTH * map;
+
+	map = 1.f - ((vert.y + 1.f) / 2.f);
+	vert.y = HEIGHT * map;
+}
+
+bool Pipeline::insideTriangle(int x, int y, const Vector* _v)
 {
 	glm::vec3 v[3];
 	for (int i = 0; i < 3; i++)
@@ -24,216 +59,84 @@ static bool insideTriangle(int x, int y, const glm::vec4* _v)
 	return false;
 }
 
-static glm::vec2 interpolate(float alpha, float beta, float gamma, const glm::vec2& vert1, const glm::vec2& vert2, const glm::vec2& vert3, float weight)
+std::tuple<float, float, float> Pipeline::computeBarycentric2D(float x, float y, const Vector* v)
 {
-	auto u = (alpha * vert1[0] + beta * vert2[0] + gamma * vert3[0]);
-	auto v = (alpha * vert1[1] + beta * vert2[1] + gamma * vert3[1]);
-
-	u /= weight;
-	v /= weight;
-
-	return glm::vec2(u, v);
+	float c1 = (x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * y + v[1].x * v[2].y - v[2].x * v[1].y) /
+		(v[0].x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * v[0].y + v[1].x * v[2].y - v[2].x * v[1].y);
+	float c2 = (x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * y + v[2].x * v[0].y - v[0].x * v[2].y) /
+		(v[1].x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * v[1].y + v[2].x * v[0].y - v[0].x * v[2].y);
+	float c3 = (x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * y + v[0].x * v[1].y - v[1].x * v[0].y) /
+		(v[2].x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * v[2].y + v[0].x * v[1].y - v[1].x * v[0].y);
+	return { c1,c2,c3 };
 }
 
-static glm::vec3 interpolate(float alpha, float beta, float gamma, const glm::vec3& vert1, const glm::vec3& vert2, const glm::vec3& vert3, float weight)
+void Pipeline::draw()
 {
-	return (alpha * vert1 + beta * vert2 + gamma * vert3) / weight;
+	for (auto& entity : entities)
+	{
+		auto model = entity.modelMatrix();
+		auto view = camera.viewMatrix();
+		auto project = camera.projectionMatrix();
+		auto mvp = project * view * model;
+
+		// TODO: vertex shader
+		for (auto& triangle : entity.m_triangles)
+		{
+			Vector newVertex[3]
+			{
+				mvp * triangle->vertexs[0],
+				mvp * triangle->vertexs[1],
+				mvp * triangle->vertexs[2]
+			};
+
+			if (cullBackface(newVertex[0], newVertex[1], newVertex[2])) continue;
+
+			for (int i = 0; i < 3; i++)
+			{
+				transformClip2NDC(newVertex[i]);
+				transformNDC2screen(newVertex[i]);
+			}
+			drawTriangle(newVertex[0], newVertex[1], newVertex[2], glm::normalize(triangle->getNormal()));
+		}
+	}
 }
 
-static float sature(float n)
+float sature(float n)
 {
 	n = std::max(0.f, n);
 	n = std::min(1.f, n);
 	return n;
 }
 
-// = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
-static auto to_vec4(const glm::vec3& v3, float w)
+void Pipeline::drawTriangle(Vector& v1, Vector& v2, Vector& v3, Normal normal)
 {
-	return glm::vec4(v3.x, v3.y, v3.z, w);
-}
+	glm::vec3 lightDir = light.transform.position;
+	Vector v[3]{ v1,v2,v3 };
+	auto colorrand = glm::vec4(rand() % 100 / (double)101, rand() % 100 / (double)101, rand() % 100 / (double)101, 1);
 
-int Pipeline::get_index(int x, int y)
-{
-	return (HEIGHT - y) * WIDTH + x;
-}
-
-glm::mat4 Pipeline::get_model_matrix(Transform transform)
-{
-	glm::mat4 Model(1);
-	Model = glm::translate(Model, transform.position);
-	Model = glm::scale(Model, transform.scale);
-	Model = glm::rotate(Model, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
-	Model = glm::rotate(Model, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));;
-	Model = glm::rotate(Model, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
-	return Model;
-}
-
-void Pipeline::clear_color(glm::vec4 color)
-{
-	for (int x = 0; x < WIDTH; x++)
-	{
-		for (int y = 0; y < HEIGHT; y++)
-		{
-			auto index = y * WIDTH + x;
-			for (int i = 0; i < 4; i++)
-			{
-				pixels[index * 4 + i] = color[i];
-			}
-		}
-	}
-}
-
-bool Pipeline::ClipSpaceCull(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3)
-{
-	if (v1.w < camera.zNear && v2.w < camera.zNear && v3.w < camera.zNear)
-		return false;
-	if (v1.w > camera.zFar && v2.w > camera.zFar && v3.w > camera.zFar)
-		return false;
-	if (v1.x > v1.w && v2.x > v2.w && v3.x > v3.w)
-		return false;
-	if (v1.x < -v1.w && v2.x < -v2.w && v3.x < -v3.w)
-		return false;
-	if (v1.y > v1.w && v2.y > v2.w && v3.y > v3.w)
-		return false;
-	if (v1.y < -v1.w && v2.y < -v2.w && v3.y < -v3.w)
-		return false;
-	if (v1.z > v1.w && v2.z > v2.w && v3.z > v3.w)
-		return false;
-	if (v1.z < -v1.w && v2.z < -v2.w && v3.z < -v3.w)
-		return false;
-	return true;
-}
-
-bool Pipeline::FaceCull(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3, Face face)
-{
-	glm::vec3 tmp1 = glm::vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
-	glm::vec3 tmp2 = glm::vec3(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z);
-
-	glm::vec3 normal = glm::normalize(glm::cross(tmp1, tmp2));
-	glm::vec3 view = camera.transform.position; // camera lookat glm::vec3(0,0,0)
-
-	if (face == Face::Back)
-		return glm::dot(normal, view) > 0;
-	else
-		return glm::dot(normal, view) < 0;
-}
-
-void Pipeline::render()
-{
-	// rasterization
-	for (const auto entity : entities)
-	{
-		ModelView = get_model_matrix(entity.transform);
-		glm::mat4 mvp = Projection * Viewport * ModelView;
-		for (const auto& t : entity.triangles)
-		{
-			Triangle newtri;
-
-			std::array<glm::vec3, 3> viewspace_pos
-			{
-				(Viewport * ModelView * t->vert[0]),
-				(Viewport * ModelView * t->vert[1]),
-				(Viewport * ModelView * t->vert[2])
-			};
-
-			glm::vec4 vertex[] = {
-					mvp * t->vert[0],
-					mvp * t->vert[1],
-					mvp * t->vert[2]
-			};
-
-			// translate to NDC
-			for (auto& v : vertex)
-			{
-				v.x /= v.w;
-				v.y /= v.w;
-				v.z /= v.w;
-			}
-
-			if (!FaceCull(vertex[0], vertex[1], vertex[2], Face::Back))
-			{
-				continue;
-			}
-
-			glm::mat4 inv_trans = glm::transpose(glm::inverse(Viewport * ModelView));
-			glm::vec4 n[] = {
-					inv_trans * to_vec4(t->normal[0], 0.0f),
-					inv_trans * to_vec4(t->normal[1], 0.0f),
-					inv_trans * to_vec4(t->normal[2], 0.0f)
-			};
-
-			// viewport transformation
-			float f1 = (50.f - 0.1f) / 2.0f;
-			float f2 = (50.f + 0.1f) / 2.0f;
-			for (auto& v : vertex)
-			{
-				v.x = 0.5f * (float)WIDTH * (v.x + 1.0f);
-				v.y = 0.5f * (float)HEIGHT * (v.y + 1.0f);
-				v.z = v.z * f1 + f2;
-			}
-
-			for (int i = 0; i < 3; ++i)
-			{
-				// screen space position
-				newtri.setVertex(i, vertex[i]);
-				newtri.setNormal(i, glm::vec3(n[i]));
-				//newtri.setColor(i, t->color->r, t->color->g, t->color->b);
-			}
-
-			triangle(newtri, viewspace_pos, lightPos);
-		}
-	}
-}
-
-void Pipeline::triangle(const Triangle& t, const std::array<glm::vec3, 3>& view_pos, const glm::vec3 lightDir)
-{
-	auto v = t.toVector4();
-	auto colorrand = glm::vec4(rand() % 255, rand() % 255, rand() % 255, 255);
-
-	int top = (int)ceil(std::max(v[0].y, std::max(v[1].y, v[2].y)));
-	int bottom = (int)floor(std::min(v[0].y, std::min(v[1].y, v[2].y)));
-	int left = (int)floor(std::min(v[0].x, std::min(v[1].x, v[2].x)));
-	int right = (int)ceil(std::max(v[0].x, std::max(v[1].x, v[2].x)));
+	int top = (int)ceil(std::max(v1.y, std::max(v2.y, v3.y)));
+	int bottom = (int)floor(std::min(v1.y, std::min(v2.y, v3.y)));
+	int left = (int)floor(std::min(v1.x, std::min(v2.x, v3.x)));
+	int right = (int)ceil(std::max(v1.x, std::max(v2.x, v3.x)));
 
 	for (int x = left; x <= right; x++)
 	{
 		for (int y = bottom; y <= top; y++)
 		{
-			if (get_index(x, y) > zbuffer.size()) continue;
-			if (insideTriangle(x, y, t.vert))
+			if (insideTriangle(x, y, v))
 			{
-				// (x,y) = alpha A + beta B + gamma C
-				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, t.vert);
+				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, v);
 				float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w; // compute point.z with w
 				float Z = 1.0f / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w); // compute point.w
 				zp *= Z;
-
-				if (zp < zbuffer[get_index(x, y)])
+				if (zp > m_device->getZbuffer(x, y))
 				{
-					// color
-					auto interpolated_color = interpolate(alpha, beta, gamma, t.color[0], t.color[1], t.color[2], 1);
-					// normal
-					auto interpolated_normal = glm::normalize(interpolate(alpha, beta, gamma, t.normal[0], t.normal[1], t.normal[2], 1));
-					// texcoords
-					auto interpolated_texcoords = interpolate(alpha, beta, gamma, t.tex_coords[0], t.tex_coords[1], t.tex_coords[2], 1);
-					// shadingcoords
-					auto interpolated_shadingcoords = interpolate(alpha, beta, gamma, view_pos[0], view_pos[1], view_pos[2], 1);
+					m_device->setZbuffer(x, y, zp);
 
-					float intensity = sature(glm::dot(interpolated_normal, lightDir));
-
-					auto color = glm::vec4(lightColor.r * intensity, lightColor.g * intensity, lightColor.b * intensity, 255);
-
-					// set zbuffer
-					zbuffer[get_index(x, y)] = zp;
-
-					//set color
-					auto index = y * WIDTH + x;
-					for (int i = 0; i < 4; i++)
-					{
-						pixels[index * 4 + i] = color[i] * intensity;
-					}
+					float intensity = sature(glm::dot((glm::vec3)normal, lightDir));
+					intensity += 0.1;
+					Color c = Color(intensity, intensity, intensity, 1);
+					m_device->drawPixel(x, y, c);
 				}
 			}
 		}

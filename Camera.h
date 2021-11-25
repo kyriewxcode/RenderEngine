@@ -1,21 +1,25 @@
-#ifndef __CAMERA_H__
-#define __CAMERA_H__
-#include "mathtool.h"
-#include "Entity.h"
+#pragma once
+#include "Math.h"
+#include "Transform.h"
 
-struct  Camera
+class Camera
 {
+public:
 	Transform transform;
-	const float fov = 45.f;
-	const float width = WIDTH;
-	const float height = HEIGHT;
-	const float zNear = 0.3f;
-	const float zFar = 1000.f;
 
-	Camera()
-	{
-		transform.position = glm::vec3(0, 0, 10.f);
-	}
+public:
+	Camera() { transform.position = glm::vec3(0, 0, 10.f); }
+	glm::mat4 viewMatrix();
+	glm::mat4 projectionMatrix();
+
+private:
+	const float m_fov = 45.f;
+	const float m_width = WIDTH;
+	const float m_height = HEIGHT;
+	const float m_zNear = 0.3f;
+	const float m_zFar = 1000.f;
+
+private:
+
 };
-#endif // !__CAMERA_H__
 

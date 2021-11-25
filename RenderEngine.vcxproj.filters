@@ -11,30 +11,39 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="pipeline.cpp">
+    <ClCompile Include="Screen.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="triangle.cpp">
+    <ClCompile Include="Device.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipeline.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pipeline.h">
+    <ClInclude Include="Math.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="mathtool.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Entity.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="triangle.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="main.h">
+    <ClInclude Include="Main.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Timer.h">
@@ -43,7 +52,31 @@
     <ClInclude Include="tiny_obj_loader.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Screen.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Device.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Pipeline.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangle.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="Camera.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

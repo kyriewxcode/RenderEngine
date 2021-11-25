@@ -1,31 +1,54 @@
-#ifndef __TRIANGLE_H__
-#define __TRIANGLE_H__
-#include "mathtool.h"
+#pragma once
+#include"Math.h"
 
 class Triangle
 {
 public:
-	glm::vec4 vert[3]; /*the original coordinates of the triangle, v0, v1, v2 in counter clockwise order*/
-	/*Per vertex values*/
-	glm::vec3 color[3]; //color at each vertex;
-	glm::vec2 tex_coords[3]; //texture u,v
-	glm::vec3 normal[3]; //normal vector for each vertex
+	Vector vertexs[3];
+	Normal normal[3];
+	Texcoord texcoord[3];
+	Color color[3];
 
-	Triangle();
+public:
+	Triangle() {};
+	Triangle(Vector p_v0, Vector p_v1, Vector p_v2)
+	{
+		vertexs[0] = p_v0;
+		vertexs[1] = p_v1;
+		vertexs[2] = p_v2;
+	}
 
-	glm::vec4 a() const { return vert[0]; }
-	glm::vec4 b() const { return vert[1]; }
-	glm::vec4 c() const { return vert[2]; }
+	void setVertex(int index, Vector v)
+	{
+		vertexs[index] = v;
+	}
 
-	void setVertex(int ind, glm::vec4 ver); /*set i-th vertex coordinates */
-	void setNormal(int ind, glm::vec3 n); /*set i-th vertex normal vector*/
-	void setColor(int ind, float r, float g, float b); /*set i-th vertex color*/
+	void setNormal(int index, Normal n)
+	{
+		normal[index] = glm::normalize(n);
+	}
 
-	void setNormals(const std::array<glm::vec3, 3>& normals);
-	void setColors(const std::array<glm::vec3, 3>& colors);
-	void setTexCoord(int ind, glm::vec2 uv); /*set i-th vertex texture coordinate*/
-	std::array<glm::vec4, 3> toVector4() const;
+	void setTexcoord(int index, Texcoord uv)
+	{
+		texcoord[index] = uv;
+	}
+
+	void setColor(int index, Color c)
+	{
+		color[index] = c;
+	}
+
+	Normal worldNormal(glm::mat4 mvp)
+	{
+		auto n0 = normal[0] * mvp;
+		auto n1 = normal[1] * mvp;
+		auto n2 = normal[2] * mvp;
+
+		return (n0 + n1 + n2) / 3.f;
+	}
+
+	Normal getNormal()
+	{
+		return (normal[0] + normal[1] + normal[2]) / 3.f;
+	}
 };
-
-
-#endif // !__TRIANGLE_H__
