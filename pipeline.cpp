@@ -59,7 +59,7 @@ bool Pipeline::insideTriangle(int x, int y, const Vector* _v)
 	f1 = glm::cross(v[2], v[1]);
 	f2 = glm::cross(v[0], v[2]);
 	glm::vec3 p(x, y, 1.);
-	if ((glm::dot(p, f0) * glm::dot(f0, v[2]) > 0) && (glm::dot(p, f1) * glm::dot(f1, v[0]) > 0) && (glm::dot(p, f2) * dot(f2, v[1]) > 0))
+	if ((glm::dot(p, f0) * glm::dot(f0, v[2]) >= 0) && (glm::dot(p, f1) * glm::dot(f1, v[0]) >= 0) && (glm::dot(p, f2) * dot(f2, v[1]) >= 0))
 		return true;
 
 	return false;
