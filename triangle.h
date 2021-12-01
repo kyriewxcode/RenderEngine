@@ -4,19 +4,17 @@
 class Triangle
 {
 public:
-	Vector vertexs[3];
-	Normal normal[3];
-	Texcoord texcoord[3];
-	Color color[3];
+	std::vector<Vector> vertexs;
+	std::vector<Normal> normal;
+	std::vector<Texcoord> texcoord;
 
 public:
-	Triangle() {};
-	Triangle(Vector p_v0, Vector p_v1, Vector p_v2)
+	Triangle()
 	{
-		vertexs[0] = p_v0;
-		vertexs[1] = p_v1;
-		vertexs[2] = p_v2;
-	}
+		vertexs = std::vector<Vector>(3);
+		normal = std::vector<Normal>(3);
+		texcoord = std::vector<Texcoord>(3);
+	};
 
 	void setVertex(int index, Vector v)
 	{
@@ -31,20 +29,6 @@ public:
 	void setTexcoord(int index, Texcoord uv)
 	{
 		texcoord[index] = uv;
-	}
-
-	void setColor(int index, Color c)
-	{
-		color[index] = c;
-	}
-
-	Normal worldNormal(glm::mat4 mvp)
-	{
-		auto n0 = normal[0] * mvp;
-		auto n1 = normal[1] * mvp;
-		auto n2 = normal[2] * mvp;
-
-		return (n0 + n1 + n2) / 3.f;
 	}
 
 	Normal getNormal()

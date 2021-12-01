@@ -81,21 +81,41 @@ std::tuple<float, float, float> Pipeline::computeBarycentric2D(float x, float y,
 
 void Pipeline::draw()
 {
+	auto view = camera.viewMatrix();
+	auto project = camera.projectionMatrix();
 	for (auto& entity : entities)
 	{
 		auto model = entity->modelMatrix();
-		auto view = camera.viewMatrix();
-		auto project = camera.projectionMatrix();
 		auto mvp = project * view * model;
 
-		// TODO: vertex shader
-		for (auto& triangle : entity->m_triangles)
+		// set up triangle buffer
+		triangls.clear();
+		for (int i = 0; i < entity->m_indices.size(); i += 3)
+		{
+			Triangle* t = new Triangle();
+			for (int j = 0; j < 3; j++)
+			{
+				t->setVertex(j, entity->m_verts[i + j]);
+				t->setNormal(j, entity->m_normals[i + j]);
+				t->setTexcoord(j, entity->m_texcoords[i + j]);
+			}
+			triangls.push_back(t);
+		}
+
+		for (auto& triangle : triangls)
 		{
 			Vector newVertex[3]
 			{
 				mvp * triangle->vertexs[0],
 				mvp * triangle->vertexs[1],
 				mvp * triangle->vertexs[2]
+			};
+
+			Normal worldNormal[3]
+			{
+				triangle->normal[0] * (glm::mat3x3)glm::inverse(model),
+				triangle->normal[1] * (glm::mat3x3)glm::inverse(model),
+				triangle->normal[2] * (glm::mat3x3)glm::inverse(model),
 			};
 
 			for (int i = 0; i < 3; i++)
@@ -110,7 +130,7 @@ void Pipeline::draw()
 				transformNDC2screen(newVertex[i]);
 			}
 
-			drawTriangle(newVertex[0], newVertex[1], newVertex[2], glm::normalize(triangle->getNormal()));
+			drawTriangle(newVertex, worldNormal);
 		}
 	}
 }
@@ -122,36 +142,32 @@ float sature(float n)
 	return n;
 }
 
-void Pipeline::drawTriangle(Vector& v1, Vector& v2, Vector& v3, Normal normal)
+void Pipeline::drawTriangle(Vector vertexs[3], Normal normals[3])
 {
 	glm::vec3 lightDir = light.transform.position;
-	Vector v[3]{ v1,v2,v3 };
 	auto colorrand = glm::vec4(rand() % 100 / (double)101, rand() % 100 / (double)101, rand() % 100 / (double)101, 1);
 
-	int top = (int)ceil(std::max(v1.y, std::max(v2.y, v3.y)));
-	int bottom = (int)floor(std::min(v1.y, std::min(v2.y, v3.y)));
-	int left = (int)floor(std::min(v1.x, std::min(v2.x, v3.x)));
-	int right = (int)ceil(std::max(v1.x, std::max(v2.x, v3.x)));
+	int top = (int)ceil(std::max(vertexs[0].y, std::max(vertexs[1].y, vertexs[2].y)));
+	int bottom = (int)floor(std::min(vertexs[0].y, std::min(vertexs[1].y, vertexs[2].y)));
+	int left = (int)floor(std::min(vertexs[0].x, std::min(vertexs[1].x, vertexs[2].x)));
+	int right = (int)ceil(std::max(vertexs[0].x, std::max(vertexs[1].x, vertexs[2].x)));
 
 	for (int x = left; x <= right; x++)
 	{
 		for (int y = bottom; y <= top; y++)
 		{
-			if (insideTriangle(x, y, v))
+			if (insideTriangle(x, y, vertexs))
 			{
-				// P = alpha*A + beta*B + gamma*C
-				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, v);
-				float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w; // compute point.z with w
-				float Z = 1.0f / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w); // compute point.w
-				zp *= Z;
-				if (zp > m_device->getZbuffer(x, y))
+				// P = alpha * A + beta * B + gamma * C
+				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, vertexs);
+				Normal normal = glm::normalize(alpha * normals[0] + beta * normals[1] + gamma * normals[2]);
+				float depth = alpha * vertexs[0].z + beta * vertexs[1].z + gamma * vertexs[2].z;
+				if (depth > m_device->getZbuffer(x, y))
 				{
-					m_device->setZbuffer(x, y, zp);
-
+					m_device->setZbuffer(x, y, depth);
 					float intensity = sature(glm::dot((glm::vec3)normal, lightDir));
-					intensity *= 0.8;
 					intensity += 0.2;
-					Color c = Color(245 * intensity, 245 * intensity, 220 * intensity, 255);
+					Color c = Color(200 * intensity, 200 * intensity, 200 * intensity, 255);
 					m_device->drawPixel(x, y, c);
 				}
 			}

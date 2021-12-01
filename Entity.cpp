@@ -66,12 +66,10 @@ void Entity::loadObj(const char* filename)
 	}
 
 	// only load one shape
-	// loop over face. 3 = triangle, 4 = quad
-	m_indices = shapes[0].points.indices;
 	int index_offset = 0;
+	m_indices = shapes[0].mesh.indices;
 	for (int f = 0; f < shapes[0].mesh.num_face_vertices.size(); f++)
 	{
-		Triangle* t = new Triangle();
 		int fv = int(shapes[0].mesh.num_face_vertices[f]);
 		//loop over vertex
 		for (int v = 0; v < fv; v++)
@@ -81,29 +79,24 @@ void Entity::loadObj(const char* filename)
 			float vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
 			float vy = attrib.vertices[3 * size_t(idx.vertex_index) + 1];
 			float vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
-			t->setVertex(v, Vector(vx, vy, vz, 1));
+			m_verts.push_back(Vector(vx, vy, vz, 1));
+
 
 			if (idx.normal_index >= 0)
 			{
 				float nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
 				float ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
 				float nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
-				t->setNormal(v, Normal(nx, ny, nz, 1));
+				m_normals.push_back(Normal(nx, ny, nz));
 			}
 
 			if (idx.texcoord_index >= 0)
 			{
 				float tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
 				float ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
-				t->setTexcoord(v, Texcoord(tx, ty));
+				m_texcoords.push_back(Texcoord(tx, ty));
 			}
-
-			float r = attrib.colors[3 * size_t(idx.vertex_index) + 0];
-			float g = attrib.colors[3 * size_t(idx.vertex_index) + 1];
-			float b = attrib.colors[3 * size_t(idx.vertex_index) + 2];
-			t->setColor(v, Color(r, g, b, 1));
 		}
-		m_triangles.push_back(t);
 		index_offset += fv;
 	}
 }

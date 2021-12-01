@@ -15,7 +15,7 @@
 typedef unsigned int UINT32;
 
 typedef glm::vec2 Texcoord;
-typedef glm::vec4 Normal;
+typedef glm::vec3 Normal;
 typedef glm::vec4 Color;
 typedef glm::vec4 Vector;
 

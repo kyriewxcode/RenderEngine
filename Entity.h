@@ -2,15 +2,18 @@
 #include "Math.h"
 #include "Transform.h"
 #include "Shader.h"
-#include "Triangle.h"
+#include "triangle.h"
 
 class Entity
 {
 public:
 	Transform transform;
-	std::vector<tinyobj::index_t> m_indices;
-	std::vector<Triangle*> m_triangles;
 	Shader shader;
+
+	std::vector<tinyobj::index_t> m_indices;
+	std::vector<Vector> m_verts;
+	std::vector<Normal> m_normals;
+	std::vector<Texcoord> m_texcoords;
 
 public:
 	Entity(const char* filename);

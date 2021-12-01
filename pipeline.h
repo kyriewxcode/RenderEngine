@@ -22,12 +22,13 @@ private:
 	void transformNDC2screen(Vector& vert);
 	bool insideTriangle(int x, int y, const Vector* _v);
 	std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector* v);
-	void drawTriangle(Vector& v1, Vector& v2, Vector& v3, Normal normal);
+	void drawTriangle(Vector vertex[3], Normal normal[3]);
 
 private:
 	Camera camera;
 	Light light;
 	std::vector<Entity*> entities;
+	std::vector<Triangle*> triangls;
 	Device* m_device;
 	bool m_texMode = true;
 };

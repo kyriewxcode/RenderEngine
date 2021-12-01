@@ -2,11 +2,13 @@
 
 glm::mat4 Camera::viewMatrix()
 {
-	return glm::lookAt(
+	auto view = glm::lookAtRH(
 		transform.position,
 		transform.forward(),
 		transform.up()
 	);
+
+	return view;
 }
 
 glm::mat4 Camera::projectionMatrix()

@@ -11,7 +11,7 @@ public:
 public:
 	Light()
 	{
-		transform.position = glm::vec3(1, 1, -1);
+		transform.position = glm::vec3(-2, 2, -2);
 	}
 };
 
