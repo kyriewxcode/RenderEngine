@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <array>
 
+#undef max
+#undef min
+
 Pipeline::Pipeline(Device* device)
 {
 	m_device = device;
@@ -136,6 +139,7 @@ void Pipeline::drawTriangle(Vector& v1, Vector& v2, Vector& v3, Normal normal)
 		{
 			if (insideTriangle(x, y, v))
 			{
+				// P = alpha*A + beta*B + gamma*C
 				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, v);
 				float zp = alpha * v[0].z / v[0].w + beta * v[1].z / v[1].w + gamma * v[2].z / v[2].w; // compute point.z with w
 				float Z = 1.0f / (alpha / v[0].w + beta / v[1].w + gamma / v[2].w); // compute point.w

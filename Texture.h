@@ -4,8 +4,6 @@
 #include <windows.h>
 
 #include <iostream>
-#include <fstream>
-#include <sstream>
 
 class Texture
 {
