@@ -4,35 +4,30 @@
 class Triangle
 {
 public:
-	std::vector<Vector> vertexs;
-	std::vector<Normal> normal;
-	std::vector<Texcoord> texcoord;
+	std::vector<glm::vec4> vertexs;
+	std::vector<glm::vec3> normal;
+	std::vector<glm::vec2> texcoord;
 
 public:
 	Triangle()
 	{
-		vertexs = std::vector<Vector>(3);
-		normal = std::vector<Normal>(3);
-		texcoord = std::vector<Texcoord>(3);
+		vertexs = std::vector<glm::vec4>(3);
+		normal = std::vector<glm::vec3>(3);
+		texcoord = std::vector<glm::vec2>(3);
 	};
 
-	void setVertex(int index, Vector v)
+	void setVertex(int index, glm::vec4 v)
 	{
 		vertexs[index] = v;
 	}
 
-	void setNormal(int index, Normal n)
+	void setNormal(int index, glm::vec3 n)
 	{
 		normal[index] = glm::normalize(n);
 	}
 
-	void setTexcoord(int index, Texcoord uv)
+	void setTexcoord(int index, glm::vec2 uv)
 	{
 		texcoord[index] = uv;
-	}
-
-	Normal getNormal()
-	{
-		return (normal[0] + normal[1] + normal[2]) / 3.f;
 	}
 };

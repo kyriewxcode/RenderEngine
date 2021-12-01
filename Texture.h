@@ -9,7 +9,7 @@ class Texture
 {
 public:
 	UINT m_width, m_height;
-	Color** m_buffer;
+	glm::vec4** m_buffer;
 
 public:
 	Texture() = default;
@@ -18,8 +18,8 @@ public:
 	Texture(const Texture& rhs);
 	Texture& operator=(const Texture& rhs);
 
-	void setBuffer(const UINT& x, const UINT& y, const Color& color);
-	Color sampleTex(const float& u, const float& v);
+	void setBuffer(const UINT& x, const UINT& y, const glm::vec4& color);
+	glm::vec4 sampleTex(const float& u, const float& v);
 
 private:
 	Texture loadTexture(std::wstring filePath);

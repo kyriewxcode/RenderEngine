@@ -11,9 +11,9 @@ public:
 	Shader shader;
 
 	std::vector<tinyobj::index_t> m_indices;
-	std::vector<Vector> m_verts;
-	std::vector<Normal> m_normals;
-	std::vector<Texcoord> m_texcoords;
+	std::vector<glm::vec4> m_verts;
+	std::vector<glm::vec3> m_normals;
+	std::vector<glm::vec2> m_texcoords;
 
 public:
 	Entity(const char* filename);

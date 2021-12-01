@@ -9,16 +9,16 @@ public:
 	void clear();
 	float getZbuffer(const int& x, const int& y);
 	void setZbuffer(const int& x, const int& y, const float& zValue);
-	void drawPixel(const int& x, const int& y, const Color& color);
+	void drawPixel(const int& x, const int& y, const glm::vec4& color);
 
 private:
 	int m_width;
 	int m_height;
 	UINT32** m_framebuffer;
 	float** m_zbuffer;
-	Color m_foreground;
-	Color m_background;
+	glm::vec4 m_foreground;
+	glm::vec4 m_background;
 private:
-	UINT32 gdiColorTransform(Color color);
+	UINT32 gdiColorTransform(glm::vec4 color);
 };
 

@@ -14,11 +14,6 @@
 
 typedef unsigned int UINT32;
 
-typedef glm::vec2 Texcoord;
-typedef glm::vec3 Normal;
-typedef glm::vec4 Color;
-typedef glm::vec4 Vector;
-
 const glm::vec3 vecZero = glm::vec3(0, 0, 0);
 const glm::vec3 vecOne = glm::vec3(1, 1, 1);
 const glm::vec3 vecRight = glm::vec3(1, 0, 0);

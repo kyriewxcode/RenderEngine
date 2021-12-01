@@ -25,8 +25,8 @@ Device::Device(void* fb, int width, int height) : m_width(width), m_height(heigh
 		m_framebuffer[i] = (UINT32*)(framebuffer + width * 4 * i);
 		m_zbuffer[i] = (float*)(zbuffer + width * 4 * i);
 	}
-	m_foreground = Color(1.f, 1.f, 1.f, 1.f);
-	m_background = Color(0.f, 0.f, 0.f, 0.f);
+	m_foreground = glm::vec4(1.f, 1.f, 1.f, 1.f);
+	m_background = glm::vec4(0.f, 0.f, 0.f, 0.f);
 }
 
 Device::~Device()
@@ -68,13 +68,13 @@ void Device::setZbuffer(const int& x, const int& y, const float& zValue)
 		m_zbuffer[y][x] = zValue;
 }
 
-void Device::drawPixel(const int& x, const int& y, const Color& color)
+void Device::drawPixel(const int& x, const int& y, const glm::vec4& color)
 {
 	if (x >= 0 && x < m_width && y >= 0 && y < m_height)
 		m_framebuffer[y][x] = gdiColorTransform(color);
 }
 
-UINT32 Device::gdiColorTransform(Color color)
+UINT32 Device::gdiColorTransform(glm::vec4 color)
 {
 	color.r = (color.r > 255.f) ? 255.f : color.r;
 	color.g = (color.g > 255.f) ? 255.f : color.g;

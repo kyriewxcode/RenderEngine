@@ -1,23 +1,22 @@
 #pragma once
 #include "Math.h"
 #include "Texture.h"
-#include "Vertex.h"
 
 class Shader
 {
 private:
 	Texture m_tex;
-	glm::mat4 m_matModel;
-	glm::mat4 m_matMVP;
+	glm::mat4 m_modelMat;
+	glm::mat4 m_mvpMat;
 
 public:
 	void setTexture(const Texture& tex);
 
-	void setMatModel(const glm::mat4& matModel);
+	void setModelMat(const glm::mat4& modelMat);
 
-	void setMatMVP(const glm::mat4& matMVP);
+	void setMatMVP(const glm::mat4& mvpMat);
 
-	void vertexShader(Vertex& v);
+	void vertexShader(glm::vec4& v, glm::vec3& n);
 
-	Color fragmentShader();
+	glm::vec4 fragmentShader();
 };

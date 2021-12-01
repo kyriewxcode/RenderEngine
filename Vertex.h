@@ -1,14 +1,10 @@
 #pragma once
-#include "math.h"
+#include <glm/glm.hpp>
 
 class Vertex
 {
 public:
-	Vector pos;
-	Normal normal;
-	Texcoord texcoord;
-public:
-	Vertex() {}
-	Vertex(Vector p, Normal n, Texcoord t) :pos(p), normal(n), texcoord(t) {}
+	glm::vec4 pos;
+	glm::vec3 normal;
+	glm::vec2 texcoord;
 };
-

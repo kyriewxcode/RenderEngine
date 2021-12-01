@@ -17,12 +17,12 @@ public:
 	void draw();
 
 private:
-	bool shouldCullBack(const Vector& v1, const Vector& v2, const Vector& v3);
-	void transformClip2NDC(Vector& vert);
-	void transformNDC2screen(Vector& vert);
-	bool insideTriangle(int x, int y, const Vector* _v);
-	std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector* v);
-	void drawTriangle(Vector vertex[3], Normal normal[3]);
+	bool shouldCullBack(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3);
+	void transformClip2NDC(glm::vec4& vert);
+	void transformNDC2screen(glm::vec4& vert);
+	bool insideTriangle(int x, int y, const glm::vec4* _v);
+	std::tuple<float, float, float> computeBarycentric2D(float x, float y, const glm::vec4* v);
+	void drawTriangle(glm::vec4 positionWS[3], glm::vec4 screenPos[3], glm::vec3 normal[3], glm::vec2 texcoord[3]);
 
 private:
 	Camera camera;

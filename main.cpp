@@ -21,19 +21,20 @@ int main(void)
 
 	Pipeline pipeline(&device);
 
-	Entity box("obj/cube/cube.obj");
-	box.transform.eulerAngles = glm::vec3(0, 0, 0);
-	pipeline.addEntity(&box);
+	//Entity plane("obj/floor.obj");
+	//plane.transform.scale = glm::vec3(3);
+	//pipeline.addEntity(&plane);
 
-	Entity plane("obj/floor.obj");
-	plane.transform.scale = glm::vec3(3);
-	pipeline.addEntity(&plane);
+	Entity bunny("obj/bunny/bunny.obj");
+	bunny.transform.position = glm::vec3(0, 0, -7);
+	bunny.transform.eulerAngles = glm::vec3(0, 180, 0);
+	pipeline.addEntity(&bunny);
 
 	clock_t t1 = clock();
 	int fpsCount = 0;
 	while (screen.m_exit == 0 && screen.m_keys[VK_ESCAPE] == 0)
 	{
-		box.update();
+		bunny.update();
 
 		float deltaTime = (clock() - t1) * 1.0 / CLOCKS_PER_SEC;
 		if (deltaTime >= 1.f)

@@ -20,27 +20,26 @@ void Pipeline::switchMode()
 	m_texMode = !m_texMode;
 }
 
-bool Pipeline::shouldCullBack(const Vector& v1, const Vector& v2, const Vector& v3)
+bool Pipeline::shouldCullBack(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3)
 {
 	glm::vec3 tmp1 = glm::vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
 	glm::vec3 tmp2 = glm::vec3(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z);
 	glm::vec3 normal = glm::cross(tmp1, tmp2);
-	glm::vec3 view = camera.transform.forward();
-	float res = glm::dot(view, normal);
-	if (res < 0)
+	float res = glm::dot(-vecForward, normal);
+	if (res > 0)
 		return true;
 	else
 		return false;
 }
 
-void Pipeline::transformClip2NDC(Vector& vert)
+void Pipeline::transformClip2NDC(glm::vec4& vert)
 {
 	vert.x /= vert.w;
 	vert.y /= vert.w;
 	vert.z /= vert.w;
 }
 
-void Pipeline::transformNDC2screen(Vector& vert)
+void Pipeline::transformNDC2screen(glm::vec4& vert)
 {
 	float map = (vert.x + 1.f) / 2.f;
 	vert.x = WIDTH * map;
@@ -52,7 +51,7 @@ void Pipeline::transformNDC2screen(Vector& vert)
 	vert.z = vert.z * f1 + f2;
 }
 
-bool Pipeline::insideTriangle(int x, int y, const Vector* _v)
+bool Pipeline::insideTriangle(int x, int y, const glm::vec4* _v)
 {
 	glm::vec3 v[3];
 	for (int i = 0; i < 3; i++)
@@ -68,7 +67,7 @@ bool Pipeline::insideTriangle(int x, int y, const Vector* _v)
 	return false;
 }
 
-std::tuple<float, float, float> Pipeline::computeBarycentric2D(float x, float y, const Vector* v)
+std::tuple<float, float, float> Pipeline::computeBarycentric2D(float x, float y, const glm::vec4* v)
 {
 	float c1 = (x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * y + v[1].x * v[2].y - v[2].x * v[1].y) /
 		(v[0].x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * v[0].y + v[1].x * v[2].y - v[2].x * v[1].y);
@@ -87,6 +86,9 @@ void Pipeline::draw()
 	{
 		auto model = entity->modelMatrix();
 		auto mvp = project * view * model;
+		entity->shader.setModelMat(model);
+		entity->shader.setMatMVP(mvp);
+
 
 		// set up triangle buffer
 		triangls.clear();
@@ -95,42 +97,63 @@ void Pipeline::draw()
 			Triangle* t = new Triangle();
 			for (int j = 0; j < 3; j++)
 			{
-				t->setVertex(j, entity->m_verts[i + j]);
-				t->setNormal(j, entity->m_normals[i + j]);
-				t->setTexcoord(j, entity->m_texcoords[i + j]);
+				auto index = i + j;
+
+				//entity->shader.vertexShader(entity->m_verts[index], entity->m_normals[index]);
+				t->setVertex(j, entity->m_verts[index]);
+				if (entity->m_normals.size() > 0)
+					t->setNormal(j, entity->m_normals[index]);
+				if (entity->m_texcoords.size() > 0)
+					t->setTexcoord(j, entity->m_texcoords[index]);
 			}
 			triangls.push_back(t);
 		}
 
+		glm::vec3 viewDir = camera.transform.position - entity->transform.position;
+
 		for (auto& triangle : triangls)
 		{
-			Vector newVertex[3]
+			glm::vec4 positionWS[3]
 			{
 				mvp * triangle->vertexs[0],
 				mvp * triangle->vertexs[1],
 				mvp * triangle->vertexs[2]
 			};
 
-			Normal worldNormal[3]
+			glm::vec3 worldNormal[3]
 			{
 				triangle->normal[0] * (glm::mat3x3)glm::inverse(model),
 				triangle->normal[1] * (glm::mat3x3)glm::inverse(model),
 				triangle->normal[2] * (glm::mat3x3)glm::inverse(model),
 			};
 
+			glm::vec2 newTexcoord[3]
+			{
+				triangle->texcoord[0],
+				triangle->texcoord[1],
+				triangle->texcoord[2]
+			};
+
+			glm::vec4 screenPos[3]
+			{
+				positionWS[0],
+				positionWS[1],
+				positionWS[2]
+			};
+
 			for (int i = 0; i < 3; i++)
 			{
-				transformClip2NDC(newVertex[i]);
+				transformClip2NDC(screenPos[i]);
 			}
 
-			if (shouldCullBack(newVertex[0], newVertex[1], newVertex[2])) continue;
+			if (shouldCullBack(screenPos[0], screenPos[1], screenPos[2])) continue;
 
 			for (int i = 0; i < 3; i++)
 			{
-				transformNDC2screen(newVertex[i]);
+				transformNDC2screen(screenPos[i]);
 			}
 
-			drawTriangle(newVertex, worldNormal);
+			drawTriangle(positionWS, screenPos, worldNormal, newTexcoord);
 		}
 	}
 }
@@ -142,32 +165,35 @@ float sature(float n)
 	return n;
 }
 
-void Pipeline::drawTriangle(Vector vertexs[3], Normal normals[3])
+void Pipeline::drawTriangle(glm::vec4 positionWS[3], glm::vec4 screenPos[3], glm::vec3 normals[3], glm::vec2 texcoord[3])
 {
-	glm::vec3 lightDir = light.transform.position;
 	auto colorrand = glm::vec4(rand() % 100 / (double)101, rand() % 100 / (double)101, rand() % 100 / (double)101, 1);
 
-	int top = (int)ceil(std::max(vertexs[0].y, std::max(vertexs[1].y, vertexs[2].y)));
-	int bottom = (int)floor(std::min(vertexs[0].y, std::min(vertexs[1].y, vertexs[2].y)));
-	int left = (int)floor(std::min(vertexs[0].x, std::min(vertexs[1].x, vertexs[2].x)));
-	int right = (int)ceil(std::max(vertexs[0].x, std::max(vertexs[1].x, vertexs[2].x)));
+	int top = (int)ceil(std::max(screenPos[0].y, std::max(screenPos[1].y, screenPos[2].y)));
+	int bottom = (int)floor(std::min(screenPos[0].y, std::min(screenPos[1].y, screenPos[2].y)));
+	int left = (int)floor(std::min(screenPos[0].x, std::min(screenPos[1].x, screenPos[2].x)));
+	int right = (int)ceil(std::max(screenPos[0].x, std::max(screenPos[1].x, screenPos[2].x)));
 
 	for (int x = left; x <= right; x++)
 	{
 		for (int y = bottom; y <= top; y++)
 		{
-			if (insideTriangle(x, y, vertexs))
+			if (insideTriangle(x, y, screenPos))
 			{
 				// P = alpha * A + beta * B + gamma * C
-				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, vertexs);
-				Normal normal = glm::normalize(alpha * normals[0] + beta * normals[1] + gamma * normals[2]);
-				float depth = alpha * vertexs[0].z + beta * vertexs[1].z + gamma * vertexs[2].z;
+				auto [alpha, beta, gamma] = computeBarycentric2D(x, y, screenPos);
+
+				glm::vec3 worldPos = glm::vec3(alpha * positionWS[0] + beta * positionWS[1] + gamma * positionWS[2]);
+				float depth = alpha * screenPos[0].z + beta * screenPos[1].z + gamma * screenPos[2].z;
+				glm::vec3 normal = glm::normalize(alpha * normals[0] + beta * normals[1] + gamma * normals[2]);
+
+				glm::vec3 lightDir = glm::normalize(light.transform.position - worldPos);
 				if (depth > m_device->getZbuffer(x, y))
 				{
 					m_device->setZbuffer(x, y, depth);
-					float intensity = sature(glm::dot((glm::vec3)normal, lightDir));
+					float intensity = sature(glm::dot(lightDir, normal));
 					intensity += 0.2;
-					Color c = Color(200 * intensity, 200 * intensity, 200 * intensity, 255);
+					glm::vec4 c = glm::vec4(200 * intensity, 200 * intensity, 200 * intensity, 255);
 					m_device->drawPixel(x, y, c);
 				}
 			}

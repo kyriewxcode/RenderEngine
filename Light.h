@@ -6,7 +6,7 @@ class Light
 {
 public:
 	Transform transform;
-	Color color{ 0.12f, 1.0f, 0.92f, 1 };
+	glm::vec4 color{ 0.12f, 1.0f, 0.92f, 1 };
 
 public:
 	Light()

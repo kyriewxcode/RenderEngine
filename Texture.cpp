@@ -4,10 +4,10 @@
 
 Texture::Texture(const UINT& width, const UINT& height) : m_width(width), m_height(height)
 {
-	m_buffer = new Color * [height];
+	m_buffer = new glm::vec4 * [height];
 	for (UINT i = 0; i < height; i++)
 	{
-		m_buffer[i] = new Color[width];
+		m_buffer[i] = new glm::vec4[width];
 	}
 }
 
@@ -21,10 +21,10 @@ Texture::~Texture()
 
 Texture::Texture(const Texture& rhs) :m_width(rhs.m_width), m_height(rhs.m_height)
 {
-	m_buffer = new Color * [m_height];
+	m_buffer = new glm::vec4 * [m_height];
 	for (int i = 0; i < m_height; ++i)
 	{
-		m_buffer[i] = new Color[m_width];
+		m_buffer[i] = new glm::vec4[m_width];
 	}
 	for (int i = 0; i < m_width; ++i)
 	{
@@ -41,10 +41,10 @@ Texture& Texture::operator=(const Texture& rhs)
 		return *this;
 	m_width = rhs.m_width;
 	m_height = rhs.m_height;
-	m_buffer = new Color * [m_height];
+	m_buffer = new glm::vec4 * [m_height];
 	for (int i = 0; i < m_height; ++i)
 	{
-		m_buffer[i] = new Color[m_width];
+		m_buffer[i] = new glm::vec4[m_width];
 	}
 	for (int i = 0; i < m_width; ++i)
 	{
@@ -56,12 +56,12 @@ Texture& Texture::operator=(const Texture& rhs)
 	return *this;
 }
 
-void Texture::setBuffer(const UINT& x, const UINT& y, const Color& color)
+void Texture::setBuffer(const UINT& x, const UINT& y, const glm::vec4& color)
 {
 	m_buffer[y][x] = color;
 }
 
-Color Texture::sampleTex(const float& u, const float& v)
+glm::vec4 Texture::sampleTex(const float& u, const float& v)
 {
 	UINT x = static_cast<UINT>(u * (m_width - 1) + 0.5f);
 	UINT y = static_cast<UINT>(v * (m_height - 1) + 0.5f);
@@ -105,7 +105,7 @@ Texture Texture::loadTexture(std::wstring filePath)
 			for (UINT j = 0; j < height; j++)
 			{
 				bmp->GetPixel(i, j, &pix);
-				Color color(
+				glm::vec4 color(
 					pix.GetRed() / 255.f,
 					pix.GetGreen() / 255.f,
 					pix.GetBlue() / 255.f,
