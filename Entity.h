@@ -1,8 +1,8 @@
 #pragma once
-#include "Math.h"
-#include "Transform.h"
+#ifndef __ENTITY_H__
+#define __ENTITY_H__
 #include "Shader.h"
-#include "triangle.h"
+#include "Transform.h"
 
 class Entity
 {
@@ -11,9 +11,10 @@ public:
 	Shader shader;
 
 	std::vector<tinyobj::index_t> m_indices;
-	std::vector<glm::vec4> m_verts;
-	std::vector<glm::vec3> m_normals;
-	std::vector<glm::vec2> m_texcoords;
+	std::vector<Vertex> m_vertexs;
+	//std::vector<glm::vec4> m_verts;
+	//std::vector<glm::vec3> m_normals;
+	//std::vector<glm::vec2> m_texcoords;
 
 public:
 	Entity(const char* filename);
@@ -24,3 +25,4 @@ private:
 	void loadObj(const char* filename);
 };
 
+#endif // !__ENTITY_H__

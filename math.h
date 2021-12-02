@@ -1,8 +1,7 @@
 #pragma once
-#ifndef __MATH_TOOL_H__
-#define __MATH_TOOL_H__
+#ifndef __MATH_H__
+#define __MATH_H__
 
-//#include <Eigen/Dense>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
@@ -10,7 +9,6 @@
 #include <vector>
 
 #include "Timer.h"
-#include "tiny_obj_loader.h"
 
 typedef unsigned int UINT32;
 
@@ -23,5 +21,5 @@ const glm::vec3 vecForward = glm::vec3(0, 0, 1);
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-#endif // !__MATH_TOOL_H__
+#endif // !__MATH_H__
 

@@ -1,14 +1,10 @@
 #pragma once
 #include "Math.h"
 #include "Texture.h"
+#include "Geometry.h"
 
 class Shader
 {
-private:
-	Texture m_tex;
-	glm::mat4 m_modelMat;
-	glm::mat4 m_mvpMat;
-
 public:
 	void setTexture(const Texture& tex);
 
@@ -16,7 +12,17 @@ public:
 
 	void setMatMVP(const glm::mat4& mvpMat);
 
-	void vertexShader(glm::vec4& v, glm::vec3& n);
+	ShaderContex vertexShader(Vertex& vert);
 
-	glm::vec4 fragmentShader();
+	void fragmentShader(ShaderContex& frag);
+
+
+private:
+	Texture m_tex;
+	glm::mat4 m_modelMat;
+	glm::mat4 m_mvpMat;
+
+private:
+	glm::vec4 transformClip2NDC(glm::vec4 vert);
+	glm::vec3 transformNDC2screen(glm::vec4 vert);
 };

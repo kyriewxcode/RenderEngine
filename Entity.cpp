@@ -75,11 +75,13 @@ void Entity::loadObj(const char* filename)
 		for (int v = 0; v < fv; v++)
 		{
 			auto idx = shapes[0].mesh.indices[index_offset + v];
+			Vertex vert;
 
 			float vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
 			float vy = attrib.vertices[3 * size_t(idx.vertex_index) + 1];
 			float vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
-			m_verts.push_back(glm::vec4(vx, vy, vz, 1));
+			//m_verts.push_back(glm::vec4(vx, vy, vz, 1));
+			vert.pos = glm::vec4(vx, vy, vz, 1);
 
 
 			if (idx.normal_index >= 0)
@@ -87,22 +89,27 @@ void Entity::loadObj(const char* filename)
 				float nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
 				float ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
 				float nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
-				m_normals.push_back(glm::vec3(nx, ny, nz));
+				//m_normals.push_back(glm::vec3(nx, ny, nz));
+				vert.normal = glm::vec3(nx, ny, nz);
 			}
 			else
 			{
 				float nx = attrib.normals[3 * size_t(idx.vertex_index) + 0];
 				float ny = attrib.normals[3 * size_t(idx.vertex_index) + 1];
 				float nz = attrib.normals[3 * size_t(idx.vertex_index) + 2];
-				m_normals.push_back(glm::vec3(nx, ny, nz));
+				//m_normals.push_back(glm::vec3(nx, ny, nz));
+				vert.normal = glm::vec3(nx, ny, nz);
 			}
 
 			if (idx.texcoord_index >= 0)
 			{
 				float tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
 				float ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
-				m_texcoords.push_back(glm::vec2(tx, ty));
+				//m_texcoords.push_back(glm::vec2(tx, ty));
+				vert.texcoord = glm::vec2(tx, ty);
 			}
+
+			m_vertexs.push_back(vert);
 		}
 		index_offset += fv;
 	}

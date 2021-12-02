@@ -50,7 +50,7 @@ void Device::clear()
 	for (y = 0; y < m_height; y++)
 	{
 		float* dst = m_zbuffer[y];
-		for (x = m_width; x > 0; dst++, x--) dst[0] = 0.f;
+		for (x = m_width; x > 0; dst++, x--) dst[0] = std::numeric_limits<float>::max();
 	}
 }
 
@@ -59,7 +59,7 @@ float Device::getZbuffer(const int& x, const int& y)
 	if (x >= 0 && x < m_width && y >= 0 && y < m_height)
 		return m_zbuffer[y][x];
 	else
-		return std::numeric_limits<float>::max();
+		return 0.f;
 }
 
 void Device::setZbuffer(const int& x, const int& y, const float& zValue)
