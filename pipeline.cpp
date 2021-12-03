@@ -146,12 +146,6 @@ void Pipeline::rasterization(Entity& entity)
 		}
 	}
 
-	// fragment shader
-	for (auto& frag : fragmentContex)
-	{
-		entity.shader.fragmentShader(frag);
-	}
-
 	// depth test
 	std::vector<ShaderContex> pixel;
 	for (auto& frag : fragmentContex)
@@ -161,6 +155,12 @@ void Pipeline::rasterization(Entity& entity)
 			m_device->setZbuffer(frag.x, frag.y, frag.depth);
 			pixel.push_back(frag);
 		}
+	}
+
+	// fragment shader
+	for (auto& p : pixel)
+	{
+		entity.shader.fragmentShader(p);
 	}
 
 	// draw
