@@ -49,15 +49,15 @@ ShaderContex Shader::vertexShader(Vertex& vert)
 	output.clipPos = m_mvpMat * vert.pos;
 	output.screenPos = transformNDC2screen(transformClip2NDC(output.clipPos));
 	output.depth = output.screenPos.z;
-	output.normal = vert.normal * glm::mat3x3(glm::inverse(m_modelMat));
+	output.normal = glm::normalize(vert.normal * glm::mat3x3(glm::inverse(m_modelMat)));
 
 	return output;
 }
 
 void Shader::fragmentShader(ShaderContex& frag)
 {
-	glm::vec3 lightPos = glm::vec3(2, 2, -9);
-	glm::vec3 lightDir = lightPos - frag.worldPos;
+	glm::vec3 lightPos = glm::vec3(2, 2, -10);
+	glm::vec3 lightDir = glm::normalize(lightPos - frag.worldPos);
 
 
 	float intensity = glm::dot(lightDir, frag.normal);

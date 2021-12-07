@@ -1,5 +1,6 @@
 #pragma once
 #include "Pipeline.h"
+#include <algorithm>
 
 #undef max
 #undef min
