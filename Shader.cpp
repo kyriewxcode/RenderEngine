@@ -22,7 +22,7 @@ glm::vec4 Shader::transformClip2NDC(glm::vec4 vert)
 		vert.x /= vert.w,
 		vert.y /= vert.w,
 		vert.z /= vert.w,
-		vert.z / vert.w
+		vert.z /= vert.w
 	};
 
 	return positionCS;
@@ -56,7 +56,7 @@ ShaderContex Shader::vertexShader(Vertex& vert)
 
 void Shader::fragmentShader(ShaderContex& frag)
 {
-	glm::vec3 lightPos = glm::vec3(2, 2, -10);
+	glm::vec3 lightPos = glm::vec3(-2, 5, -10);
 	glm::vec3 lightDir = glm::normalize(lightPos - frag.worldPos);
 
 

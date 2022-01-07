@@ -28,7 +28,7 @@ int main(void)
 	//pipeline.addEntity(&plane);
 
 	Entity bunny("obj/bunny/bunny.obj");
-	bunny.transform.position = glm::vec3(0, 0, -7);
+	bunny.transform.position = glm::vec3(0, -0.3, -7);
 	bunny.transform.eulerAngles = glm::vec3(0, 180, 0);
 	pipeline.addEntity(bunny);
 
