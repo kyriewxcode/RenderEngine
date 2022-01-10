@@ -13,427 +13,427 @@
 namespace meshopt
 {
 
-// This must be <= 255 since index 0xff is used internally to indice a vertex that doesn't belong to a meshlet
-const size_t kMeshletMaxVertices = 255;
+	// This must be <= 255 since index 0xff is used internally to indice a vertex that doesn't belong to a meshlet
+	const size_t kMeshletMaxVertices = 255;
 
-// A reasonable limit is around 2*max_vertices or less
-const size_t kMeshletMaxTriangles = 512;
+	// A reasonable limit is around 2*max_vertices or less
+	const size_t kMeshletMaxTriangles = 512;
 
-struct TriangleAdjacency2
-{
-	unsigned int* counts;
-	unsigned int* offsets;
-	unsigned int* data;
-};
-
-static void buildTriangleAdjacency(TriangleAdjacency2& adjacency, const unsigned int* indices, size_t index_count, size_t vertex_count, meshopt_Allocator& allocator)
-{
-	size_t face_count = index_count / 3;
-
-	// allocate arrays
-	adjacency.counts = allocator.allocate<unsigned int>(vertex_count);
-	adjacency.offsets = allocator.allocate<unsigned int>(vertex_count);
-	adjacency.data = allocator.allocate<unsigned int>(index_count);
-
-	// fill triangle counts
-	memset(adjacency.counts, 0, vertex_count * sizeof(unsigned int));
-
-	for (size_t i = 0; i < index_count; ++i)
+	struct TriangleAdjacency2
 	{
-		assert(indices[i] < vertex_count);
+		unsigned int* counts;
+		unsigned int* offsets;
+		unsigned int* data;
+	};
 
-		adjacency.counts[indices[i]]++;
+	static void buildTriangleAdjacency(TriangleAdjacency2& adjacency, const unsigned int* indices, size_t index_count, size_t vertex_count, meshopt_Allocator& allocator)
+	{
+		size_t face_count = index_count / 3;
+
+		// allocate arrays
+		adjacency.counts = allocator.allocate<unsigned int>(vertex_count);
+		adjacency.offsets = allocator.allocate<unsigned int>(vertex_count);
+		adjacency.data = allocator.allocate<unsigned int>(index_count);
+
+		// fill triangle counts
+		memset(adjacency.counts, 0, vertex_count * sizeof(unsigned int));
+
+		for (size_t i = 0; i < index_count; ++i)
+		{
+			assert(indices[i] < vertex_count);
+
+			adjacency.counts[indices[i]]++;
+		}
+
+		// fill offset table
+		unsigned int offset = 0;
+
+		for (size_t i = 0; i < vertex_count; ++i)
+		{
+			adjacency.offsets[i] = offset;
+			offset += adjacency.counts[i];
+		}
+
+		assert(offset == index_count);
+
+		// fill triangle data
+		for (size_t i = 0; i < face_count; ++i)
+		{
+			unsigned int a = indices[i * 3 + 0], b = indices[i * 3 + 1], c = indices[i * 3 + 2];
+
+			adjacency.data[adjacency.offsets[a]++] = unsigned(i);
+			adjacency.data[adjacency.offsets[b]++] = unsigned(i);
+			adjacency.data[adjacency.offsets[c]++] = unsigned(i);
+		}
+
+		// fix offsets that have been disturbed by the previous pass
+		for (size_t i = 0; i < vertex_count; ++i)
+		{
+			assert(adjacency.offsets[i] >= adjacency.counts[i]);
+
+			adjacency.offsets[i] -= adjacency.counts[i];
+		}
 	}
 
-	// fill offset table
-	unsigned int offset = 0;
-
-	for (size_t i = 0; i < vertex_count; ++i)
+	static void computeBoundingSphere(float result[4], const float points[][3], size_t count)
 	{
-		adjacency.offsets[i] = offset;
-		offset += adjacency.counts[i];
-	}
+		assert(count > 0);
 
-	assert(offset == index_count);
+		// find extremum points along all 3 axes; for each axis we get a pair of points with min/max coordinates
+		size_t pmin[3] = { 0, 0, 0 };
+		size_t pmax[3] = { 0, 0, 0 };
 
-	// fill triangle data
-	for (size_t i = 0; i < face_count; ++i)
-	{
-		unsigned int a = indices[i * 3 + 0], b = indices[i * 3 + 1], c = indices[i * 3 + 2];
+		for (size_t i = 0; i < count; ++i)
+		{
+			const float* p = points[i];
 
-		adjacency.data[adjacency.offsets[a]++] = unsigned(i);
-		adjacency.data[adjacency.offsets[b]++] = unsigned(i);
-		adjacency.data[adjacency.offsets[c]++] = unsigned(i);
-	}
+			for (int axis = 0; axis < 3; ++axis)
+			{
+				pmin[axis] = (p[axis] < points[pmin[axis]][axis]) ? i : pmin[axis];
+				pmax[axis] = (p[axis] > points[pmax[axis]][axis]) ? i : pmax[axis];
+			}
+		}
 
-	// fix offsets that have been disturbed by the previous pass
-	for (size_t i = 0; i < vertex_count; ++i)
-	{
-		assert(adjacency.offsets[i] >= adjacency.counts[i]);
-
-		adjacency.offsets[i] -= adjacency.counts[i];
-	}
-}
-
-static void computeBoundingSphere(float result[4], const float points[][3], size_t count)
-{
-	assert(count > 0);
-
-	// find extremum points along all 3 axes; for each axis we get a pair of points with min/max coordinates
-	size_t pmin[3] = {0, 0, 0};
-	size_t pmax[3] = {0, 0, 0};
-
-	for (size_t i = 0; i < count; ++i)
-	{
-		const float* p = points[i];
+		// find the pair of points with largest distance
+		float paxisd2 = 0;
+		int paxis = 0;
 
 		for (int axis = 0; axis < 3; ++axis)
 		{
-			pmin[axis] = (p[axis] < points[pmin[axis]][axis]) ? i : pmin[axis];
-			pmax[axis] = (p[axis] > points[pmax[axis]][axis]) ? i : pmax[axis];
-		}
-	}
+			const float* p1 = points[pmin[axis]];
+			const float* p2 = points[pmax[axis]];
 
-	// find the pair of points with largest distance
-	float paxisd2 = 0;
-	int paxis = 0;
+			float d2 = (p2[0] - p1[0]) * (p2[0] - p1[0]) + (p2[1] - p1[1]) * (p2[1] - p1[1]) + (p2[2] - p1[2]) * (p2[2] - p1[2]);
 
-	for (int axis = 0; axis < 3; ++axis)
-	{
-		const float* p1 = points[pmin[axis]];
-		const float* p2 = points[pmax[axis]];
-
-		float d2 = (p2[0] - p1[0]) * (p2[0] - p1[0]) + (p2[1] - p1[1]) * (p2[1] - p1[1]) + (p2[2] - p1[2]) * (p2[2] - p1[2]);
-
-		if (d2 > paxisd2)
-		{
-			paxisd2 = d2;
-			paxis = axis;
-		}
-	}
-
-	// use the longest segment as the initial sphere diameter
-	const float* p1 = points[pmin[paxis]];
-	const float* p2 = points[pmax[paxis]];
-
-	float center[3] = {(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2};
-	float radius = sqrtf(paxisd2) / 2;
-
-	// iteratively adjust the sphere up until all points fit
-	for (size_t i = 0; i < count; ++i)
-	{
-		const float* p = points[i];
-		float d2 = (p[0] - center[0]) * (p[0] - center[0]) + (p[1] - center[1]) * (p[1] - center[1]) + (p[2] - center[2]) * (p[2] - center[2]);
-
-		if (d2 > radius * radius)
-		{
-			float d = sqrtf(d2);
-			assert(d > 0);
-
-			float k = 0.5f + (radius / d) / 2;
-
-			center[0] = center[0] * k + p[0] * (1 - k);
-			center[1] = center[1] * k + p[1] * (1 - k);
-			center[2] = center[2] * k + p[2] * (1 - k);
-			radius = (radius + d) / 2;
-		}
-	}
-
-	result[0] = center[0];
-	result[1] = center[1];
-	result[2] = center[2];
-	result[3] = radius;
-}
-
-struct Cone
-{
-	float px, py, pz;
-	float nx, ny, nz;
-};
-
-static float getMeshletScore(float distance2, float spread, float cone_weight, float expected_radius)
-{
-	float cone = 1.f - spread * cone_weight;
-	float cone_clamped = cone < 1e-3f ? 1e-3f : cone;
-
-	return (1 + sqrtf(distance2) / expected_radius * (1 - cone_weight)) * cone_clamped;
-}
-
-static Cone getMeshletCone(const Cone& acc, unsigned int triangle_count)
-{
-	Cone result = acc;
-
-	float center_scale = triangle_count == 0 ? 0.f : 1.f / float(triangle_count);
-
-	result.px *= center_scale;
-	result.py *= center_scale;
-	result.pz *= center_scale;
-
-	float axis_length = result.nx * result.nx + result.ny * result.ny + result.nz * result.nz;
-	float axis_scale = axis_length == 0.f ? 0.f : 1.f / sqrtf(axis_length);
-
-	result.nx *= axis_scale;
-	result.ny *= axis_scale;
-	result.nz *= axis_scale;
-
-	return result;
-}
-
-static float computeTriangleCones(Cone* triangles, const unsigned int* indices, size_t index_count, const float* vertex_positions, size_t vertex_count, size_t vertex_positions_stride)
-{
-	(void)vertex_count;
-
-	size_t vertex_stride_float = vertex_positions_stride / sizeof(float);
-	size_t face_count = index_count / 3;
-
-	float mesh_area = 0;
-
-	for (size_t i = 0; i < face_count; ++i)
-	{
-		unsigned int a = indices[i * 3 + 0], b = indices[i * 3 + 1], c = indices[i * 3 + 2];
-		assert(a < vertex_count && b < vertex_count && c < vertex_count);
-
-		const float* p0 = vertex_positions + vertex_stride_float * a;
-		const float* p1 = vertex_positions + vertex_stride_float * b;
-		const float* p2 = vertex_positions + vertex_stride_float * c;
-
-		float p10[3] = {p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]};
-		float p20[3] = {p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]};
-
-		float normalx = p10[1] * p20[2] - p10[2] * p20[1];
-		float normaly = p10[2] * p20[0] - p10[0] * p20[2];
-		float normalz = p10[0] * p20[1] - p10[1] * p20[0];
-
-		float area = sqrtf(normalx * normalx + normaly * normaly + normalz * normalz);
-		float invarea = (area == 0.f) ? 0.f : 1.f / area;
-
-		triangles[i].px = (p0[0] + p1[0] + p2[0]) / 3.f;
-		triangles[i].py = (p0[1] + p1[1] + p2[1]) / 3.f;
-		triangles[i].pz = (p0[2] + p1[2] + p2[2]) / 3.f;
-
-		triangles[i].nx = normalx * invarea;
-		triangles[i].ny = normaly * invarea;
-		triangles[i].nz = normalz * invarea;
-
-		mesh_area += area;
-	}
-
-	return mesh_area;
-}
-
-static void finishMeshlet(meshopt_Meshlet& meshlet, unsigned char* meshlet_triangles)
-{
-	size_t offset = meshlet.triangle_offset + meshlet.triangle_count * 3;
-
-	// fill 4b padding with 0
-	while (offset & 3)
-		meshlet_triangles[offset++] = 0;
-}
-
-static bool appendMeshlet(meshopt_Meshlet& meshlet, unsigned int a, unsigned int b, unsigned int c, unsigned char* used, meshopt_Meshlet* meshlets, unsigned int* meshlet_vertices, unsigned char* meshlet_triangles, size_t meshlet_offset, size_t max_vertices, size_t max_triangles)
-{
-	unsigned char& av = used[a];
-	unsigned char& bv = used[b];
-	unsigned char& cv = used[c];
-
-	bool result = false;
-
-	unsigned int used_extra = (av == 0xff) + (bv == 0xff) + (cv == 0xff);
-
-	if (meshlet.vertex_count + used_extra > max_vertices || meshlet.triangle_count >= max_triangles)
-	{
-		meshlets[meshlet_offset] = meshlet;
-
-		for (size_t j = 0; j < meshlet.vertex_count; ++j)
-			used[meshlet_vertices[meshlet.vertex_offset + j]] = 0xff;
-
-		finishMeshlet(meshlet, meshlet_triangles);
-
-		meshlet.vertex_offset += meshlet.vertex_count;
-		meshlet.triangle_offset += (meshlet.triangle_count * 3 + 3) & ~3; // 4b padding
-		meshlet.vertex_count = 0;
-		meshlet.triangle_count = 0;
-
-		result = true;
-	}
-
-	if (av == 0xff)
-	{
-		av = (unsigned char)meshlet.vertex_count;
-		meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = a;
-	}
-
-	if (bv == 0xff)
-	{
-		bv = (unsigned char)meshlet.vertex_count;
-		meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = b;
-	}
-
-	if (cv == 0xff)
-	{
-		cv = (unsigned char)meshlet.vertex_count;
-		meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = c;
-	}
-
-	meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 0] = av;
-	meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 1] = bv;
-	meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 2] = cv;
-	meshlet.triangle_count++;
-
-	return result;
-}
-
-struct KDNode
-{
-	union
-	{
-		float split;
-		unsigned int index;
-	};
-
-	// leaves: axis = 3, children = number of extra points after this one (0 if 'index' is the only point)
-	// branches: axis != 3, left subtree = skip 1, right subtree = skip 1+children
-	unsigned int axis : 2;
-	unsigned int children : 30;
-};
-
-static size_t kdtreePartition(unsigned int* indices, size_t count, const float* points, size_t stride, unsigned int axis, float pivot)
-{
-	size_t m = 0;
-
-	// invariant: elements in range [0, m) are < pivot, elements in range [m, i) are >= pivot
-	for (size_t i = 0; i < count; ++i)
-	{
-		float v = points[indices[i] * stride + axis];
-
-		// swap(m, i) unconditionally
-		unsigned int t = indices[m];
-		indices[m] = indices[i];
-		indices[i] = t;
-
-		// when v >= pivot, we swap i with m without advancing it, preserving invariants
-		m += v < pivot;
-	}
-
-	return m;
-}
-
-static size_t kdtreeBuildLeaf(size_t offset, KDNode* nodes, size_t node_count, unsigned int* indices, size_t count)
-{
-	assert(offset + count <= node_count);
-	(void)node_count;
-
-	KDNode& result = nodes[offset];
-
-	result.index = indices[0];
-	result.axis = 3;
-	result.children = unsigned(count - 1);
-
-	// all remaining points are stored in nodes immediately following the leaf
-	for (size_t i = 1; i < count; ++i)
-	{
-		KDNode& tail = nodes[offset + i];
-
-		tail.index = indices[i];
-		tail.axis = 3;
-		tail.children = ~0u >> 2; // bogus value to prevent misuse
-	}
-
-	return offset + count;
-}
-
-static size_t kdtreeBuild(size_t offset, KDNode* nodes, size_t node_count, const float* points, size_t stride, unsigned int* indices, size_t count, size_t leaf_size)
-{
-	assert(count > 0);
-	assert(offset < node_count);
-
-	if (count <= leaf_size)
-		return kdtreeBuildLeaf(offset, nodes, node_count, indices, count);
-
-	float mean[3] = {};
-	float vars[3] = {};
-	float runc = 1, runs = 1;
-
-	// gather statistics on the points in the subtree using Welford's algorithm
-	for (size_t i = 0; i < count; ++i, runc += 1.f, runs = 1.f / runc)
-	{
-		const float* point = points + indices[i] * stride;
-
-		for (int k = 0; k < 3; ++k)
-		{
-			float delta = point[k] - mean[k];
-			mean[k] += delta * runs;
-			vars[k] += delta * (point[k] - mean[k]);
-		}
-	}
-
-	// split axis is one where the variance is largest
-	unsigned int axis = vars[0] >= vars[1] && vars[0] >= vars[2] ? 0 : vars[1] >= vars[2] ? 1 : 2;
-
-	float split = mean[axis];
-	size_t middle = kdtreePartition(indices, count, points, stride, axis, split);
-
-	// when the partition is degenerate simply consolidate the points into a single node
-	if (middle <= leaf_size / 2 || middle >= count - leaf_size / 2)
-		return kdtreeBuildLeaf(offset, nodes, node_count, indices, count);
-
-	KDNode& result = nodes[offset];
-
-	result.split = split;
-	result.axis = axis;
-
-	// left subtree is right after our node
-	size_t next_offset = kdtreeBuild(offset + 1, nodes, node_count, points, stride, indices, middle, leaf_size);
-
-	// distance to the right subtree is represented explicitly
-	result.children = unsigned(next_offset - offset - 1);
-
-	return kdtreeBuild(next_offset, nodes, node_count, points, stride, indices + middle, count - middle, leaf_size);
-}
-
-static void kdtreeNearest(KDNode* nodes, unsigned int root, const float* points, size_t stride, const unsigned char* emitted_flags, const float* position, unsigned int& result, float& limit)
-{
-	const KDNode& node = nodes[root];
-
-	if (node.axis == 3)
-	{
-		// leaf
-		for (unsigned int i = 0; i <= node.children; ++i)
-		{
-			unsigned int index = nodes[root + i].index;
-
-			if (emitted_flags[index])
-				continue;
-
-			const float* point = points + index * stride;
-
-			float distance2 =
-			    (point[0] - position[0]) * (point[0] - position[0]) +
-			    (point[1] - position[1]) * (point[1] - position[1]) +
-			    (point[2] - position[2]) * (point[2] - position[2]);
-			float distance = sqrtf(distance2);
-
-			if (distance < limit)
+			if (d2 > paxisd2)
 			{
-				result = index;
-				limit = distance;
+				paxisd2 = d2;
+				paxis = axis;
 			}
 		}
+
+		// use the longest segment as the initial sphere diameter
+		const float* p1 = points[pmin[paxis]];
+		const float* p2 = points[pmax[paxis]];
+
+		float center[3] = { (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2 };
+		float radius = sqrtf(paxisd2) / 2;
+
+		// iteratively adjust the sphere up until all points fit
+		for (size_t i = 0; i < count; ++i)
+		{
+			const float* p = points[i];
+			float d2 = (p[0] - center[0]) * (p[0] - center[0]) + (p[1] - center[1]) * (p[1] - center[1]) + (p[2] - center[2]) * (p[2] - center[2]);
+
+			if (d2 > radius * radius)
+			{
+				float d = sqrtf(d2);
+				assert(d > 0);
+
+				float k = 0.5f + (radius / d) / 2;
+
+				center[0] = center[0] * k + p[0] * (1 - k);
+				center[1] = center[1] * k + p[1] * (1 - k);
+				center[2] = center[2] * k + p[2] * (1 - k);
+				radius = (radius + d) / 2;
+			}
+		}
+
+		result[0] = center[0];
+		result[1] = center[1];
+		result[2] = center[2];
+		result[3] = radius;
 	}
-	else
+
+	struct Cone
 	{
-		// branch; we order recursion to process the node that search position is in first
-		float delta = position[node.axis] - node.split;
-		unsigned int first = (delta <= 0) ? 0 : node.children;
-		unsigned int second = first ^ node.children;
+		float px, py, pz;
+		float nx, ny, nz;
+	};
 
-		kdtreeNearest(nodes, root + 1 + first, points, stride, emitted_flags, position, result, limit);
+	static float getMeshletScore(float distance2, float spread, float cone_weight, float expected_radius)
+	{
+		float cone = 1.f - spread * cone_weight;
+		float cone_clamped = cone < 1e-3f ? 1e-3f : cone;
 
-		// only process the other node if it can have a match based on closest distance so far
-		if (fabsf(delta) <= limit)
-			kdtreeNearest(nodes, root + 1 + second, points, stride, emitted_flags, position, result, limit);
+		return (1 + sqrtf(distance2) / expected_radius * (1 - cone_weight)) * cone_clamped;
 	}
-}
+
+	static Cone getMeshletCone(const Cone& acc, unsigned int triangle_count)
+	{
+		Cone result = acc;
+
+		float center_scale = triangle_count == 0 ? 0.f : 1.f / float(triangle_count);
+
+		result.px *= center_scale;
+		result.py *= center_scale;
+		result.pz *= center_scale;
+
+		float axis_length = result.nx * result.nx + result.ny * result.ny + result.nz * result.nz;
+		float axis_scale = axis_length == 0.f ? 0.f : 1.f / sqrtf(axis_length);
+
+		result.nx *= axis_scale;
+		result.ny *= axis_scale;
+		result.nz *= axis_scale;
+
+		return result;
+	}
+
+	static float computeTriangleCones(Cone* triangles, const unsigned int* indices, size_t index_count, const float* vertex_positions, size_t vertex_count, size_t vertex_positions_stride)
+	{
+		(void)vertex_count;
+
+		size_t vertex_stride_float = vertex_positions_stride / sizeof(float);
+		size_t face_count = index_count / 3;
+
+		float mesh_area = 0;
+
+		for (size_t i = 0; i < face_count; ++i)
+		{
+			unsigned int a = indices[i * 3 + 0], b = indices[i * 3 + 1], c = indices[i * 3 + 2];
+			assert(a < vertex_count&& b < vertex_count&& c < vertex_count);
+
+			const float* p0 = vertex_positions + vertex_stride_float * a;
+			const float* p1 = vertex_positions + vertex_stride_float * b;
+			const float* p2 = vertex_positions + vertex_stride_float * c;
+
+			float p10[3] = { p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2] };
+			float p20[3] = { p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2] };
+
+			float normalx = p10[1] * p20[2] - p10[2] * p20[1];
+			float normaly = p10[2] * p20[0] - p10[0] * p20[2];
+			float normalz = p10[0] * p20[1] - p10[1] * p20[0];
+
+			float area = sqrtf(normalx * normalx + normaly * normaly + normalz * normalz);
+			float invarea = (area == 0.f) ? 0.f : 1.f / area;
+
+			triangles[i].px = (p0[0] + p1[0] + p2[0]) / 3.f;
+			triangles[i].py = (p0[1] + p1[1] + p2[1]) / 3.f;
+			triangles[i].pz = (p0[2] + p1[2] + p2[2]) / 3.f;
+
+			triangles[i].nx = normalx * invarea;
+			triangles[i].ny = normaly * invarea;
+			triangles[i].nz = normalz * invarea;
+
+			mesh_area += area;
+		}
+
+		return mesh_area;
+	}
+
+	static void finishMeshlet(meshopt_Meshlet& meshlet, unsigned char* meshlet_triangles)
+	{
+		size_t offset = meshlet.triangle_offset + meshlet.triangle_count * 3;
+
+		// fill 4b padding with 0
+		while (offset & 3)
+			meshlet_triangles[offset++] = 0;
+	}
+
+	static bool appendMeshlet(meshopt_Meshlet& meshlet, unsigned int a, unsigned int b, unsigned int c, unsigned char* used, meshopt_Meshlet* meshlets, unsigned int* meshlet_vertices, unsigned char* meshlet_triangles, size_t meshlet_offset, size_t max_vertices, size_t max_triangles)
+	{
+		unsigned char& av = used[a];
+		unsigned char& bv = used[b];
+		unsigned char& cv = used[c];
+
+		bool result = false;
+
+		unsigned int used_extra = (av == 0xff) + (bv == 0xff) + (cv == 0xff);
+
+		if (meshlet.vertex_count + used_extra > max_vertices || meshlet.triangle_count >= max_triangles)
+		{
+			meshlets[meshlet_offset] = meshlet;
+
+			for (size_t j = 0; j < meshlet.vertex_count; ++j)
+				used[meshlet_vertices[meshlet.vertex_offset + j]] = 0xff;
+
+			finishMeshlet(meshlet, meshlet_triangles);
+
+			meshlet.vertex_offset += meshlet.vertex_count;
+			meshlet.triangle_offset += (meshlet.triangle_count * 3 + 3) & ~3; // 4b padding
+			meshlet.vertex_count = 0;
+			meshlet.triangle_count = 0;
+
+			result = true;
+		}
+
+		if (av == 0xff)
+		{
+			av = (unsigned char)meshlet.vertex_count;
+			meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = a;
+		}
+
+		if (bv == 0xff)
+		{
+			bv = (unsigned char)meshlet.vertex_count;
+			meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = b;
+		}
+
+		if (cv == 0xff)
+		{
+			cv = (unsigned char)meshlet.vertex_count;
+			meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = c;
+		}
+
+		meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 0] = av;
+		meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 1] = bv;
+		meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 2] = cv;
+		meshlet.triangle_count++;
+
+		return result;
+	}
+
+	struct KDNode
+	{
+		union
+		{
+			float split;
+			unsigned int index;
+		};
+
+		// leaves: axis = 3, children = number of extra points after this one (0 if 'index' is the only point)
+		// branches: axis != 3, left subtree = skip 1, right subtree = skip 1+children
+		unsigned int axis : 2;
+		unsigned int children : 30;
+	};
+
+	static size_t kdtreePartition(unsigned int* indices, size_t count, const float* points, size_t stride, unsigned int axis, float pivot)
+	{
+		size_t m = 0;
+
+		// invariant: elements in range [0, m) are < pivot, elements in range [m, i) are >= pivot
+		for (size_t i = 0; i < count; ++i)
+		{
+			float v = points[indices[i] * stride + axis];
+
+			// swap(m, i) unconditionally
+			unsigned int t = indices[m];
+			indices[m] = indices[i];
+			indices[i] = t;
+
+			// when v >= pivot, we swap i with m without advancing it, preserving invariants
+			m += v < pivot;
+		}
+
+		return m;
+	}
+
+	static size_t kdtreeBuildLeaf(size_t offset, KDNode* nodes, size_t node_count, unsigned int* indices, size_t count)
+	{
+		assert(offset + count <= node_count);
+		(void)node_count;
+
+		KDNode& result = nodes[offset];
+
+		result.index = indices[0];
+		result.axis = 3;
+		result.children = unsigned(count - 1);
+
+		// all remaining points are stored in nodes immediately following the leaf
+		for (size_t i = 1; i < count; ++i)
+		{
+			KDNode& tail = nodes[offset + i];
+
+			tail.index = indices[i];
+			tail.axis = 3;
+			tail.children = ~0u >> 2; // bogus value to prevent misuse
+		}
+
+		return offset + count;
+	}
+
+	static size_t kdtreeBuild(size_t offset, KDNode* nodes, size_t node_count, const float* points, size_t stride, unsigned int* indices, size_t count, size_t leaf_size)
+	{
+		assert(count > 0);
+		assert(offset < node_count);
+
+		if (count <= leaf_size)
+			return kdtreeBuildLeaf(offset, nodes, node_count, indices, count);
+
+		float mean[3] = {};
+		float vars[3] = {};
+		float runc = 1, runs = 1;
+
+		// gather statistics on the points in the subtree using Welford's algorithm
+		for (size_t i = 0; i < count; ++i, runc += 1.f, runs = 1.f / runc)
+		{
+			const float* point = points + indices[i] * stride;
+
+			for (int k = 0; k < 3; ++k)
+			{
+				float delta = point[k] - mean[k];
+				mean[k] += delta * runs;
+				vars[k] += delta * (point[k] - mean[k]);
+			}
+		}
+
+		// split axis is one where the variance is largest
+		unsigned int axis = vars[0] >= vars[1] && vars[0] >= vars[2] ? 0 : vars[1] >= vars[2] ? 1 : 2;
+
+		float split = mean[axis];
+		size_t middle = kdtreePartition(indices, count, points, stride, axis, split);
+
+		// when the partition is degenerate simply consolidate the points into a single node
+		if (middle <= leaf_size / 2 || middle >= count - leaf_size / 2)
+			return kdtreeBuildLeaf(offset, nodes, node_count, indices, count);
+
+		KDNode& result = nodes[offset];
+
+		result.split = split;
+		result.axis = axis;
+
+		// left subtree is right after our node
+		size_t next_offset = kdtreeBuild(offset + 1, nodes, node_count, points, stride, indices, middle, leaf_size);
+
+		// distance to the right subtree is represented explicitly
+		result.children = unsigned(next_offset - offset - 1);
+
+		return kdtreeBuild(next_offset, nodes, node_count, points, stride, indices + middle, count - middle, leaf_size);
+	}
+
+	static void kdtreeNearest(KDNode* nodes, unsigned int root, const float* points, size_t stride, const unsigned char* emitted_flags, const float* position, unsigned int& result, float& limit)
+	{
+		const KDNode& node = nodes[root];
+
+		if (node.axis == 3)
+		{
+			// leaf
+			for (unsigned int i = 0; i <= node.children; ++i)
+			{
+				unsigned int index = nodes[root + i].index;
+
+				if (emitted_flags[index])
+					continue;
+
+				const float* point = points + index * stride;
+
+				float distance2 =
+					(point[0] - position[0]) * (point[0] - position[0]) +
+					(point[1] - position[1]) * (point[1] - position[1]) +
+					(point[2] - position[2]) * (point[2] - position[2]);
+				float distance = sqrtf(distance2);
+
+				if (distance < limit)
+				{
+					result = index;
+					limit = distance;
+				}
+			}
+		}
+		else
+		{
+			// branch; we order recursion to process the node that search position is in first
+			float delta = position[node.axis] - node.split;
+			unsigned int first = (delta <= 0) ? 0 : node.children;
+			unsigned int second = first ^ node.children;
+
+			kdtreeNearest(nodes, root + 1 + first, points, stride, emitted_flags, position, result, limit);
+
+			// only process the other node if it can have a match based on closest distance so far
+			if (fabsf(delta) <= limit)
+				kdtreeNearest(nodes, root + 1 + second, points, stride, emitted_flags, position, result, limit);
+		}
+	}
 
 } // namespace meshopt
 
@@ -530,7 +530,7 @@ size_t meshopt_buildMeshlets(meshopt_Meshlet* meshlets, unsigned int* meshlet_ve
 				assert(!emitted_flags[triangle]);
 
 				unsigned int a = indices[triangle * 3 + 0], b = indices[triangle * 3 + 1], c = indices[triangle * 3 + 2];
-				assert(a < vertex_count && b < vertex_count && c < vertex_count);
+				assert(a < vertex_count&& b < vertex_count&& c < vertex_count);
 
 				unsigned int extra = (used[a] == 0xff) + (used[b] == 0xff) + (used[c] == 0xff);
 
@@ -551,9 +551,9 @@ size_t meshopt_buildMeshlets(meshopt_Meshlet* meshlets, unsigned int* meshlet_ve
 				const Cone& tri_cone = triangles[triangle];
 
 				float distance2 =
-				    (tri_cone.px - meshlet_cone.px) * (tri_cone.px - meshlet_cone.px) +
-				    (tri_cone.py - meshlet_cone.py) * (tri_cone.py - meshlet_cone.py) +
-				    (tri_cone.pz - meshlet_cone.pz) * (tri_cone.pz - meshlet_cone.pz);
+					(tri_cone.px - meshlet_cone.px) * (tri_cone.px - meshlet_cone.px) +
+					(tri_cone.py - meshlet_cone.py) * (tri_cone.py - meshlet_cone.py) +
+					(tri_cone.pz - meshlet_cone.pz) * (tri_cone.pz - meshlet_cone.pz);
 
 				float spread = tri_cone.nx * meshlet_cone.nx + tri_cone.ny * meshlet_cone.ny + tri_cone.nz * meshlet_cone.nz;
 
@@ -572,7 +572,7 @@ size_t meshopt_buildMeshlets(meshopt_Meshlet* meshlets, unsigned int* meshlet_ve
 
 		if (best_triangle == ~0u)
 		{
-			float position[3] = {meshlet_cone.px, meshlet_cone.py, meshlet_cone.pz};
+			float position[3] = { meshlet_cone.px, meshlet_cone.py, meshlet_cone.pz };
 			unsigned int index = ~0u;
 			float limit = FLT_MAX;
 
@@ -585,7 +585,7 @@ size_t meshopt_buildMeshlets(meshopt_Meshlet* meshlets, unsigned int* meshlet_ve
 			break;
 
 		unsigned int a = indices[best_triangle * 3 + 0], b = indices[best_triangle * 3 + 1], c = indices[best_triangle * 3 + 2];
-		assert(a < vertex_count && b < vertex_count && c < vertex_count);
+		assert(a < vertex_count&& b < vertex_count&& c < vertex_count);
 
 		// add meshlet to the output; when the current meshlet is full we reset the accumulated bounds
 		if (appendMeshlet(meshlet, a, b, c, used, meshlets, meshlet_vertices, meshlet_triangles, meshlet_offset, max_vertices, max_triangles))
@@ -664,7 +664,7 @@ size_t meshopt_buildMeshletsScan(meshopt_Meshlet* meshlets, unsigned int* meshle
 	for (size_t i = 0; i < index_count; i += 3)
 	{
 		unsigned int a = indices[i + 0], b = indices[i + 1], c = indices[i + 2];
-		assert(a < vertex_count && b < vertex_count && c < vertex_count);
+		assert(a < vertex_count&& b < vertex_count&& c < vertex_count);
 
 		// appends triangle to the meshlet and writes previous meshlet to the output if full
 		meshlet_offset += appendMeshlet(meshlet, a, b, c, used, meshlets, meshlet_vertices, meshlet_triangles, meshlet_offset, max_vertices, max_triangles);
@@ -702,14 +702,14 @@ meshopt_Bounds meshopt_computeClusterBounds(const unsigned int* indices, size_t 
 	for (size_t i = 0; i < index_count; i += 3)
 	{
 		unsigned int a = indices[i + 0], b = indices[i + 1], c = indices[i + 2];
-		assert(a < vertex_count && b < vertex_count && c < vertex_count);
+		assert(a < vertex_count&& b < vertex_count&& c < vertex_count);
 
 		const float* p0 = vertex_positions + vertex_stride_float * a;
 		const float* p1 = vertex_positions + vertex_stride_float * b;
 		const float* p2 = vertex_positions + vertex_stride_float * c;
 
-		float p10[3] = {p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]};
-		float p20[3] = {p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]};
+		float p10[3] = { p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2] };
+		float p20[3] = { p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2] };
 
 		float normalx = p10[1] * p20[2] - p10[2] * p20[1];
 		float normaly = p10[2] * p20[0] - p10[0] * p20[2];
@@ -741,13 +741,13 @@ meshopt_Bounds meshopt_computeClusterBounds(const unsigned int* indices, size_t 
 	float psphere[4] = {};
 	computeBoundingSphere(psphere, corners[0], triangles * 3);
 
-	float center[3] = {psphere[0], psphere[1], psphere[2]};
+	float center[3] = { psphere[0], psphere[1], psphere[2] };
 
 	// treating triangle normals as points, find the bounding sphere - the sphere center determines the optimal cone axis
 	float nsphere[4] = {};
 	computeBoundingSphere(nsphere, normals, triangles);
 
-	float axis[3] = {nsphere[0], nsphere[1], nsphere[2]};
+	float axis[3] = { nsphere[0], nsphere[1], nsphere[2] };
 	float axislength = sqrtf(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
 	float invaxislength = axislength == 0.f ? 0.f : 1.f / axislength;
 

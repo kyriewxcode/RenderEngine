@@ -1,4 +1,8 @@
 #pragma once
+#ifndef __LIGHT_H_
+#define __LIGHT_H_
+
+
 #include "Transform.h"
 #include "Math.h"
 
@@ -15,3 +19,4 @@ public:
 	}
 };
 
+#endif // !__LIGHT_H_

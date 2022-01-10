@@ -1,4 +1,7 @@
 #pragma once
+#ifndef __DEVICE_H_
+#define __DEVICE_H_
+
 #include"Math.h"
 
 class Device
@@ -22,3 +25,4 @@ private:
 	UINT32 gdiColorTransform(glm::vec4 color);
 };
 
+#endif // !__DEVICE_H_

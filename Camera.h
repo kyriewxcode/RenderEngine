@@ -1,4 +1,8 @@
 #pragma once
+#ifndef __CAMERA_H_
+#define __CAMERA_H_
+
+
 #include "Math.h"
 #include "Transform.h"
 
@@ -26,3 +30,4 @@ private:
 
 };
 
+#endif // !__CAMERA_H_

@@ -1,6 +1,6 @@
 #pragma once
 #include "Pipeline.h"
-#include <algorithm>
+#include "Meshlet.h"
 
 #undef max
 #undef min
@@ -92,18 +92,72 @@ void Pipeline::draw()
 
 void Pipeline::rasterization(Entity& entity)
 {
-	// set up triangle
-	for (int i = 0; i < entity.m_indices.size(); i += 3)
+	// get meshlet
+	Mesh mesh;
+	for (auto index : entity.m_indices)
 	{
-		Triangle t;
-		for (int j = 0; j < 3; j++)
-		{
-			auto index = i + j;
-			t.vertexContexs[j] = vertexContex[index];
-		}
-		if (shouldCullBack(t.vertexContexs[0].clipPos, t.vertexContexs[1].clipPos, t.vertexContexs[2].clipPos)) continue;
-		triangls.push_back(t);
+		mesh.indices.push_back(index.vertex_index);
 	}
+	mesh.verticesSize = entity.m_vertexs.size();
+	std::vector<meshopt_Meshlet> meshlets;
+	std::vector<unsigned int> indices;
+	std::vector<unsigned int> triangles;
+	GetMeshletTest(mesh, meshlets, indices, triangles);
+
+	// set up triangle
+	for (size_t i = 0; i < meshlets.size(); i++)
+	{
+		auto randColor = glm::vec4(255, 255, 255, 255);// glm::vec4(rand() % 255, rand() % 255, rand() % 255, 1);
+
+		for (size_t j = 0; j < meshlets[i].triangle_count; j++)
+		{
+			int triangleIndex = meshlets[i].triangle_offset + j * 3;
+			int localInedex0 = triangles[triangleIndex];
+			int localInedex1 = triangles[triangleIndex + 1];
+			int localInedex2 = triangles[triangleIndex + 2];
+			int vertexIndex0 = indices[localInedex0] + meshlets[i].vertex_offset;
+			int vertexIndex1 = indices[localInedex1] + meshlets[i].vertex_offset;
+			int vertexIndex2 = indices[localInedex2] + meshlets[i].vertex_offset;
+
+			auto v0 = vertexContex[vertexIndex0];
+			auto v1 = vertexContex[vertexIndex1];
+			auto v2 = vertexContex[vertexIndex2];
+
+			v0.color = randColor;
+			v1.color = randColor;
+			v2.color = randColor;
+
+			//m_device->drawPixel(v0.screenPos.x, v0.screenPos.y, randColor);
+			//m_device->drawPixel(v1.screenPos.x, v1.screenPos.y, randColor);
+			//m_device->drawPixel(v2.screenPos.x, v2.screenPos.y, randColor);
+
+			Triangle t;
+			t.index[0] = vertexIndex0;
+			t.index[1] = vertexIndex1;
+			t.index[2] = vertexIndex2;
+
+			t.vertexContexs[0] = v0;
+			t.vertexContexs[1] = v1;
+			t.vertexContexs[2] = v2;
+			if (shouldCullBack(t.vertexContexs[0].clipPos, t.vertexContexs[1].clipPos, t.vertexContexs[2].clipPos)) continue;
+			triangls.push_back(t);
+		}
+	}
+
+	//return;
+
+	//// set up triangle
+	//for (int i = 0; i < entity.m_indices.size(); i += 3)
+	//{
+	//	Triangle t;
+	//	for (int j = 0; j < 3; j++)
+	//	{
+	//		auto index = i + j;
+	//		t.vertexContexs[j] = vertexContex[index];
+	//	}
+	//	if (shouldCullBack(t.vertexContexs[0].clipPos, t.vertexContexs[1].clipPos, t.vertexContexs[2].clipPos)) continue;
+	//	triangls.push_back(t);
+	//}
 
 	// traversal triangle
 	for (auto& t : triangls)
@@ -138,9 +192,9 @@ void Pipeline::rasterization(Entity& entity)
 					auto [alpha, beta, gamma] = computeBarycentric2D(x, y, triangleVertexs);
 					fragContex.worldPos = alpha * vertexA.worldPos + beta * vertexB.worldPos + gamma * vertexC.worldPos;
 					fragContex.normal = glm::normalize(alpha * vertexA.normal + beta * vertexB.normal + gamma * vertexC.normal);
-					fragContex.depth = alpha * vertexA.depth + beta * vertexB.depth + gamma * vertexC.depth;
 					fragContex.texcoord = alpha * vertexA.texcoord + beta * vertexB.texcoord + gamma * vertexC.texcoord;
-
+					fragContex.depth = alpha * vertexA.depth + beta * vertexB.depth + gamma * vertexC.depth;
+					fragContex.color = alpha * vertexA.color + beta * vertexB.color + gamma * vertexC.color;;
 					fragmentContex.push_back(fragContex);
 				}
 			}
@@ -169,4 +223,5 @@ void Pipeline::rasterization(Entity& entity)
 	{
 		m_device->drawPixel(p.x, p.y, p.color);
 	}
+
 }

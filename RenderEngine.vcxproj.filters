@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="meshoptimizer">
+      <UniqueIdentifier>{4b309c6d-ce0a-40ec-bad2-8f62fc6c8e51}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -40,6 +43,51 @@
     </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\allocator.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\clusterizer.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\indexcodec.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\indexgenerator.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\overdrawanalyzer.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\overdrawoptimizer.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\simplifier.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\spatialorder.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\stripifier.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\vcacheanalyzer.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\vcacheoptimizer.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\vertexcodec.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\vertexfilter.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\vfetchanalyzer.cpp">
+      <Filter>meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="include\meshoptimizer\vfetchoptimizer.cpp">
+      <Filter>meshoptimizer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -84,6 +132,12 @@
     </ClInclude>
     <ClInclude Include="Geometry.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Meshlet.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\meshoptimizer\meshoptimizer.h">
+      <Filter>meshoptimizer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -65,6 +65,5 @@ void Shader::fragmentShader(ShaderContex& frag)
 	intensity = intensity < 0 ? 0 : intensity;
 	intensity += 0.2;
 
-	frag.color = glm::vec4(200 * intensity, 200 * intensity, 200 * intensity, 255);
-
+	frag.color = glm::vec4(frag.color.r * intensity, frag.color.g * intensity, frag.color.b * intensity, 255);
 }

@@ -1,4 +1,8 @@
 #pragma once
+#ifndef __PIPELINE_H_
+#define __PIPELINE_H_
+
+#include <algorithm>
 #include "math.h"
 #include "Device.h"
 #include "Entity.h"
@@ -34,3 +38,4 @@ private:
 
 	Device* m_device;
 };
+#endif // !__PIPELINE_H_
